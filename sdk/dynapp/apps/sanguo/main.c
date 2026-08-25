@@ -36,11 +36,11 @@ static struct {
 enum { V_MENU, V_FACTION, V_PLAY, V_HELP, V_ABOUT_MENU };
 static int g_view;
 static int g_menuSel;
-static int g_selCity;       // cursor on the map (play view)
-static int g_actionSel;     // action submenu index, -1 = map cursor mode
+static int g_selCity;    // cursor on the map (play view)
+static int g_actionSel;  // action submenu index, -1 = map cursor mode
 static char g_log[6][48];
 static int g_logN;
-static int g_outcome;       // 0 ongoing, 1 win, 2 loss
+static int g_outcome;  // 0 ongoing, 1 win, 2 loss
 static AppAbout g_about;
 
 static const char* kHelp =
@@ -64,7 +64,10 @@ static int strongestGeneralAt(int city, int faction, int exclude) {
   for (int g = 0; g < SG_GENERALS; ++g) {
     if (g == exclude || st.genCity[g] != city || st.genOwner[g] != faction) continue;
     const int score = kGenerals[g].war + kGenerals[g].wit;
-    if (score > bestScore) { bestScore = score; best = g; }
+    if (score > bestScore) {
+      bestScore = score;
+      best = g;
+    }
   }
   return best;
 }
@@ -126,7 +129,10 @@ static void newGame(int faction) {
   g_outcome = 0;
   g_selCity = 0;
   for (int i = 0; i < SG_CITIES; ++i)
-    if (st.cities[i].owner == faction) { g_selCity = i; break; }
+    if (st.cities[i].owner == faction) {
+      g_selCity = i;
+      break;
+    }
 }
 
 static void save(const CpApi* api) { api->file_write("save.bin", &st, sizeof(st)); }
@@ -146,8 +152,12 @@ static void moveGeneralsAfterCapture(int city, int oldOwner, int newOwner, char*
     }
     int refuge = -1;
     for (int i = 0; i < SG_CITIES; ++i)
-      if (i != city && st.cities[i].owner == oldOwner) { refuge = i; break; }
-    if (refuge >= 0) st.genCity[g] = (unsigned char)refuge;
+      if (i != city && st.cities[i].owner == oldOwner) {
+        refuge = i;
+        break;
+      }
+    if (refuge >= 0)
+      st.genCity[g] = (unsigned char)refuge;
     else {
       st.genOwner[g] = (unsigned char)newOwner;
       if (joinMsg && joinMsg[0] == 0) cp_snprintf(joinMsg, joinCap, "%s归顺", kGenerals[g].name);
@@ -174,8 +184,9 @@ static int resolveBattle(const CpApi* api, int fromCity, int toCity, uint16_t tr
     target->troops = (uint16_t)(troops - lost);
     const int lead = strongestGeneralAt(fromCity, attacker, -1);
     if (lead >= 0) st.genCity[lead] = (unsigned char)toCity;
-    if (outMsg) cp_snprintf(outMsg, outCap, "%s攻占%s%s%s", kFactionNames[attacker], kCities[toCity].name,
-                            joinMsg[0] ? "，" : "", joinMsg);
+    if (outMsg)
+      cp_snprintf(outMsg, outCap, "%s攻占%s%s%s", kFactionNames[attacker], kCities[toCity].name, joinMsg[0] ? "，" : "",
+                  joinMsg);
     return 1;
   }
   uint32_t atkLost = (uint32_t)troops * def / (atk == 0 ? 1 : atk) * 50 / 100;
@@ -199,7 +210,8 @@ static void applyIncome(void) {
       upkeepTroops += st.cities[i].troops;
     }
     const uint32_t upkeep = upkeepTroops / 10;
-    if (food >= upkeep) food -= upkeep;
+    if (food >= upkeep)
+      food -= upkeep;
     else {
       uint32_t shortfall = (upkeep - food) * 10;
       food = 0;
@@ -245,7 +257,11 @@ static void aiTurn(const CpApi* api, int faction) {
         for (int t = 0; t < SG_CITIES; ++t) {
           if ((kCities[i].adjacency & (1U << t)) == 0 || st.cities[t].owner == faction) continue;
           const uint32_t ratio = attackPower(sendable, i, faction) * 100 / (defensePower(t) + 1);
-          if (ratio > bestRatio) { bestRatio = ratio; bestFrom = i; bestTarget = t; }
+          if (ratio > bestRatio) {
+            bestRatio = ratio;
+            bestFrom = i;
+            bestTarget = t;
+          }
         }
       }
       if (bestFrom >= 0 && bestRatio >= 140) {
@@ -287,8 +303,10 @@ static void aiTurn(const CpApi* api, int faction) {
 }
 
 static void checkOutcome(void) {
-  if (countCities(st.playerFaction) == SG_CITIES) g_outcome = 1;
-  else if (countCities(st.playerFaction) == 0) g_outcome = 2;
+  if (countCities(st.playerFaction) == SG_CITIES)
+    g_outcome = 1;
+  else if (countCities(st.playerFaction) == 0)
+    g_outcome = 2;
 }
 
 static void endTurn(const CpApi* api) {
@@ -310,7 +328,7 @@ static int adjacentEnemy(int city, int* out, int cap) {
 }
 
 static const char* kActions[5] = {"开垦", "通商", "筑城", "征兵", "出征"};
-static int g_marchTarget = -1;   // when choosing a march destination
+static int g_marchTarget = -1;  // when choosing a march destination
 
 static void doAction(const CpApi* api, int a) {
   if (st.actionsLeft == 0) return;
@@ -318,14 +336,22 @@ static void doAction(const CpApi* api, int a) {
   if (c->owner != st.playerFaction) return;
   const int pf = st.playerFaction;
   if (a == 0 && c->farm < SG_MAXLEVEL && st.gold[pf] >= FARM_COST * c->farm) {
-    st.gold[pf] -= FARM_COST * c->farm; ++c->farm; --st.actionsLeft;
+    st.gold[pf] -= FARM_COST * c->farm;
+    ++c->farm;
+    --st.actionsLeft;
   } else if (a == 1 && c->market < SG_MAXLEVEL && st.gold[pf] >= MARKET_COST * c->market) {
-    st.gold[pf] -= MARKET_COST * c->market; ++c->market; --st.actionsLeft;
+    st.gold[pf] -= MARKET_COST * c->market;
+    ++c->market;
+    --st.actionsLeft;
   } else if (a == 2 && c->walls < SG_MAXLEVEL && st.gold[pf] >= WALL_COST * c->walls) {
-    st.gold[pf] -= WALL_COST * c->walls; ++c->walls; --st.actionsLeft;
+    st.gold[pf] -= WALL_COST * c->walls;
+    ++c->walls;
+    --st.actionsLeft;
   } else if (a == 3 && st.gold[pf] >= RECRUIT_GOLD && st.food[pf] >= RECRUIT_FOOD) {
-    st.gold[pf] -= RECRUIT_GOLD; st.food[pf] -= RECRUIT_FOOD;
-    c->troops = clampT((uint32_t)c->troops + RECRUIT_TROOPS); --st.actionsLeft;
+    st.gold[pf] -= RECRUIT_GOLD;
+    st.food[pf] -= RECRUIT_FOOD;
+    c->troops = clampT((uint32_t)c->troops + RECRUIT_TROOPS);
+    --st.actionsLeft;
   } else if (a == 4) {
     int enemies[4];
     if (adjacentEnemy(g_selCity, enemies, 4) > 0 && c->troops >= 1000) {
@@ -365,20 +391,33 @@ static uint32_t on_loop(const CpApi* api, const CpInput* in) {
     if (app_menu_input(api, in, &g_menuSel, count)) {
       int item = g_menuSel;
       if (!g_hasSave) ++item;  // skip the hidden "continue" slot
-      if (item == 0) { g_view = V_PLAY; g_actionSel = -1; g_outcome = 0; }
-      else if (item == 1) { g_view = V_FACTION; g_menuSel = 0; }
-      else if (item == 2) g_view = V_HELP;
-      else g_view = V_ABOUT_MENU;
+      if (item == 0) {
+        g_view = V_PLAY;
+        g_actionSel = -1;
+        g_outcome = 0;
+      } else if (item == 1) {
+        g_view = V_FACTION;
+        g_menuSel = 0;
+      } else if (item == 2)
+        g_view = V_HELP;
+      else
+        g_view = V_ABOUT_MENU;
       return CP_LOOP_RENDER;
     }
     return CP_LOOP_IDLE;
   }
   if (g_view == V_HELP || g_view == V_ABOUT_MENU) {
-    if ((in->released & CP_BTN_BACK) || (in->released & CP_BTN_CONFIRM)) { startMenu(api); return CP_LOOP_RENDER; }
+    if ((in->released & CP_BTN_BACK) || (in->released & CP_BTN_CONFIRM)) {
+      startMenu(api);
+      return CP_LOOP_RENDER;
+    }
     return CP_LOOP_IDLE;
   }
   if (g_view == V_FACTION) {
-    if (in->released & CP_BTN_BACK) { startMenu(api); return CP_LOOP_RENDER; }
+    if (in->released & CP_BTN_BACK) {
+      startMenu(api);
+      return CP_LOOP_RENDER;
+    }
     if (app_menu_input(api, in, &g_menuSel, 3)) {
       newGame(g_menuSel);
       g_view = V_PLAY;
@@ -390,12 +429,22 @@ static uint32_t on_loop(const CpApi* api, const CpInput* in) {
 
   // ---- play ----
   if (g_outcome) {
-    if (in->released & CP_BTN_CONFIRM) { api->file_delete("save.bin"); startMenu(api); return CP_LOOP_RENDER; }
+    if (in->released & CP_BTN_CONFIRM) {
+      api->file_delete("save.bin");
+      startMenu(api);
+      return CP_LOOP_RENDER;
+    }
     return CP_LOOP_IDLE;
   }
   if (in->released & CP_BTN_BACK) {
-    if (g_marchTarget >= 0) { g_marchTarget = -1; return CP_LOOP_RENDER; }
-    if (g_actionSel >= 0) { g_actionSel = -1; return CP_LOOP_RENDER; }
+    if (g_marchTarget >= 0) {
+      g_marchTarget = -1;
+      return CP_LOOP_RENDER;
+    }
+    if (g_actionSel >= 0) {
+      g_actionSel = -1;
+      return CP_LOOP_RENDER;
+    }
     save(api);
     startMenu(api);
     return CP_LOOP_RENDER;
@@ -406,9 +455,16 @@ static uint32_t on_loop(const CpApi* api, const CpInput* in) {
     int enemies[4];
     const int ne = adjacentEnemy(g_selCity, enemies, 4);
     int idx = 0;
-    for (int i = 0; i < ne; ++i) if (enemies[i] == g_marchTarget) idx = i;
-    if (in->released & CP_BTN_RIGHT) { g_marchTarget = enemies[(idx + 1) % ne]; return CP_LOOP_RENDER; }
-    if (in->released & CP_BTN_LEFT) { g_marchTarget = enemies[(idx + ne - 1) % ne]; return CP_LOOP_RENDER; }
+    for (int i = 0; i < ne; ++i)
+      if (enemies[i] == g_marchTarget) idx = i;
+    if (in->released & CP_BTN_RIGHT) {
+      g_marchTarget = enemies[(idx + 1) % ne];
+      return CP_LOOP_RENDER;
+    }
+    if (in->released & CP_BTN_LEFT) {
+      g_marchTarget = enemies[(idx + ne - 1) % ne];
+      return CP_LOOP_RENDER;
+    }
     if (in->released & CP_BTN_CONFIRM) {
       const uint16_t send = (uint16_t)(st.cities[g_selCity].troops * 8 / 10);
       char msg[48];
@@ -440,10 +496,17 @@ static uint32_t on_loop(const CpApi* api, const CpInput* in) {
 
   // Map cursor mode.
   uint32_t f = CP_LOOP_IDLE;
-  if (in->released & CP_BTN_UP) { g_selCity = (g_selCity + SG_CITIES - 1) % SG_CITIES; f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_DOWN) { g_selCity = (g_selCity + 1) % SG_CITIES; f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_CONFIRM) {
-    if (st.cities[g_selCity].owner == st.playerFaction) { g_actionSel = 0; f = CP_LOOP_RENDER; }
+  if (in->released & CP_BTN_UP) {
+    g_selCity = (g_selCity + SG_CITIES - 1) % SG_CITIES;
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_DOWN) {
+    g_selCity = (g_selCity + 1) % SG_CITIES;
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_CONFIRM) {
+    if (st.cities[g_selCity].owner == st.playerFaction) {
+      g_actionSel = 0;
+      f = CP_LOOP_RENDER;
+    }
   } else if ((in->released & CP_BTN_LEFT) || (in->released & CP_BTN_RIGHT)) {
     endTurn(api);  // end the round
     f = CP_LOOP_RENDER;
@@ -471,7 +534,10 @@ static void on_render(const CpApi* api) {
     app_header(api, "选择势力", "");
     static char lb[3][32];
     static const char* pt[3];
-    for (int i = 0; i < 3; ++i) { cp_snprintf(lb[i], sizeof(lb[0]), "%s（%s）", kFactionNames[i], kFactionLeaders[i]); pt[i] = lb[i]; }
+    for (int i = 0; i < 3; ++i) {
+      cp_snprintf(lb[i], sizeof(lb[0]), "%s（%s）", kFactionNames[i], kFactionLeaders[i]);
+      pt[i] = lb[i];
+    }
     app_menu_draw(api, 70, pt, 3, g_menuSel);
     app_hints(api, "返回", "开始", "上下选择", "");
     return;
@@ -492,9 +558,10 @@ static void on_render(const CpApi* api) {
   // ---- play view ----
   if (g_outcome) {
     app_header(api, "三国霸业", "");
-    api->draw_text_centered(CP_FONT_TITLE, w / 2, h / 2 - 40, g_outcome == 1 ? "一统天下！" : "大势已去", 1, CP_TEXT_BOLD);
-    api->draw_text_centered(CP_FONT_UI, w / 2, h / 2 + 20,
-                            g_outcome == 1 ? "十二城尽归旗下" : "最后的城池已经陷落", 1, CP_TEXT_REGULAR);
+    api->draw_text_centered(CP_FONT_TITLE, w / 2, h / 2 - 40, g_outcome == 1 ? "一统天下！" : "大势已去", 1,
+                            CP_TEXT_BOLD);
+    api->draw_text_centered(CP_FONT_UI, w / 2, h / 2 + 20, g_outcome == 1 ? "十二城尽归旗下" : "最后的城池已经陷落", 1,
+                            CP_TEXT_REGULAR);
     app_hints(api, "返回", "确认返回", "", "");
     return;
   }
@@ -536,8 +603,10 @@ static void on_render(const CpApi* api) {
       const int x = 16 + (a % 3) * ((w - 32) / 3);
       const int y = h - 116 + (a / 3) * 40;
       const int sel = (a == g_actionSel);
-      if (sel) api->fill_rect(x, y, (w - 32) / 3 - 6, 34, 1);
-      else api->draw_rect(x, y, (w - 32) / 3 - 6, 34, 1);
+      if (sel)
+        api->fill_rect(x, y, (w - 32) / 3 - 6, 34, 1);
+      else
+        api->draw_rect(x, y, (w - 32) / 3 - 6, 34, 1);
       api->draw_text(CP_FONT_UI, x + 8, y + 8, kActions[a], sel ? 0 : 1, CP_TEXT_BOLD);
     }
     app_hints(api, "返回", "执行", "上下选动作", "");

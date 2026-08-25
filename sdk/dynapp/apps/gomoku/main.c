@@ -20,8 +20,20 @@ static int in_b(int x, int y) { return x >= 0 && x < BN && y >= 0 && y < BN; }
 static int wins_at(int who, int x, int y) {
   for (int d = 0; d < 4; ++d) {
     int cnt = 1;
-    for (int s = 1; s < 5; ++s) { int nx = x + DX[d] * s, ny = y + DY[d] * s; if (in_b(nx, ny) && g_b[ny][nx] == who) ++cnt; else break; }
-    for (int s = 1; s < 5; ++s) { int nx = x - DX[d] * s, ny = y - DY[d] * s; if (in_b(nx, ny) && g_b[ny][nx] == who) ++cnt; else break; }
+    for (int s = 1; s < 5; ++s) {
+      int nx = x + DX[d] * s, ny = y + DY[d] * s;
+      if (in_b(nx, ny) && g_b[ny][nx] == who)
+        ++cnt;
+      else
+        break;
+    }
+    for (int s = 1; s < 5; ++s) {
+      int nx = x - DX[d] * s, ny = y - DY[d] * s;
+      if (in_b(nx, ny) && g_b[ny][nx] == who)
+        ++cnt;
+      else
+        break;
+    }
     if (cnt >= 5) return 1;
   }
   return 0;
@@ -33,16 +45,30 @@ static long line_score(int who, int x, int y) {
   for (int d = 0; d < 4; ++d) {
     int cnt = 1, openEnds = 0;
     int nx = x + DX[d], ny = y + DY[d];
-    while (in_b(nx, ny) && g_b[ny][nx] == who) { ++cnt; nx += DX[d]; ny += DY[d]; }
+    while (in_b(nx, ny) && g_b[ny][nx] == who) {
+      ++cnt;
+      nx += DX[d];
+      ny += DY[d];
+    }
     if (in_b(nx, ny) && g_b[ny][nx] == 0) ++openEnds;
-    nx = x - DX[d]; ny = y - DY[d];
-    while (in_b(nx, ny) && g_b[ny][nx] == who) { ++cnt; nx -= DX[d]; ny -= DY[d]; }
+    nx = x - DX[d];
+    ny = y - DY[d];
+    while (in_b(nx, ny) && g_b[ny][nx] == who) {
+      ++cnt;
+      nx -= DX[d];
+      ny -= DY[d];
+    }
     if (in_b(nx, ny) && g_b[ny][nx] == 0) ++openEnds;
-    if (cnt >= 5) score += 1000000;
-    else if (cnt == 4) score += openEnds == 2 ? 100000 : (openEnds == 1 ? 12000 : 0);
-    else if (cnt == 3) score += openEnds == 2 ? 8000 : (openEnds == 1 ? 800 : 0);
-    else if (cnt == 2) score += openEnds == 2 ? 400 : (openEnds == 1 ? 60 : 0);
-    else if (cnt == 1) score += openEnds == 2 ? 20 : 5;
+    if (cnt >= 5)
+      score += 1000000;
+    else if (cnt == 4)
+      score += openEnds == 2 ? 100000 : (openEnds == 1 ? 12000 : 0);
+    else if (cnt == 3)
+      score += openEnds == 2 ? 8000 : (openEnds == 1 ? 800 : 0);
+    else if (cnt == 2)
+      score += openEnds == 2 ? 400 : (openEnds == 1 ? 60 : 0);
+    else if (cnt == 1)
+      score += openEnds == 2 ? 20 : 5;
   }
   return score;
 }
@@ -71,10 +97,16 @@ static void ai_move(const CpApi* api) {
       long v = off + def * 9 / 10;
       // tiny jitter to avoid deterministic ties
       v += api->random_u32() % 7;
-      if (v > best) { best = v; bx = x; by = y; found = 1; }
+      if (v > best) {
+        best = v;
+        bx = x;
+        by = y;
+        found = 1;
+      }
     }
   if (!found) {  // empty board: center
-    bx = BN / 2; by = BN / 2;
+    bx = BN / 2;
+    by = BN / 2;
   }
   g_b[by][bx] = 2;
   if (wins_at(2, bx, by)) g_winner = 2;
@@ -100,26 +132,46 @@ static uint32_t on_loop(const CpApi* api, const CpInput* in) {
 
   if (g_view == 0) {  // simple start screen
     if (in->released & CP_BTN_BACK) return CP_LOOP_EXIT;
-    if (in->released & CP_BTN_CONFIRM) { reset(); g_view = 1; return CP_LOOP_RENDER; }
+    if (in->released & CP_BTN_CONFIRM) {
+      reset();
+      g_view = 1;
+      return CP_LOOP_RENDER;
+    }
     return CP_LOOP_IDLE;
   }
 
-  if (in->released & CP_BTN_BACK) { g_view = 0; return CP_LOOP_RENDER; }
+  if (in->released & CP_BTN_BACK) {
+    g_view = 0;
+    return CP_LOOP_RENDER;
+  }
   uint32_t f = CP_LOOP_IDLE;
   if (g_winner) {
-    if (in->released & CP_BTN_CONFIRM) { reset(); return CP_LOOP_RENDER; }
+    if (in->released & CP_BTN_CONFIRM) {
+      reset();
+      return CP_LOOP_RENDER;
+    }
     return CP_LOOP_IDLE;
   }
   if (g_turn == 1) {
-    if (in->released & CP_BTN_LEFT) { g_cx = (g_cx + BN - 1) % BN; f = CP_LOOP_RENDER; }
-    else if (in->released & CP_BTN_RIGHT) { g_cx = (g_cx + 1) % BN; f = CP_LOOP_RENDER; }
-    else if (in->released & CP_BTN_UP) { g_cy = (g_cy + BN - 1) % BN; f = CP_LOOP_RENDER; }
-    else if (in->released & CP_BTN_DOWN) { g_cy = (g_cy + 1) % BN; f = CP_LOOP_RENDER; }
-    else if (in->released & CP_BTN_CONFIRM) {
+    if (in->released & CP_BTN_LEFT) {
+      g_cx = (g_cx + BN - 1) % BN;
+      f = CP_LOOP_RENDER;
+    } else if (in->released & CP_BTN_RIGHT) {
+      g_cx = (g_cx + 1) % BN;
+      f = CP_LOOP_RENDER;
+    } else if (in->released & CP_BTN_UP) {
+      g_cy = (g_cy + BN - 1) % BN;
+      f = CP_LOOP_RENDER;
+    } else if (in->released & CP_BTN_DOWN) {
+      g_cy = (g_cy + 1) % BN;
+      f = CP_LOOP_RENDER;
+    } else if (in->released & CP_BTN_CONFIRM) {
       if (g_b[g_cy][g_cx] == 0) {
         g_b[g_cy][g_cx] = 1;
-        if (wins_at(1, g_cx, g_cy)) g_winner = 1;
-        else g_turn = 2;
+        if (wins_at(1, g_cx, g_cy))
+          g_winner = 1;
+        else
+          g_turn = 2;
       }
       f = CP_LOOP_RENDER;
     }
@@ -163,9 +215,14 @@ static void on_render(const CpApi* api) {
         const int cxp = bx + x * cell, cyp = by + y * cell;
         const int r = cell / 2 - 1;
         if (g_b[y][x] == 1) {
-          for (int dy = -r; dy <= r; ++dy) for (int dx = -r; dx <= r; ++dx) if (dx * dx + dy * dy <= r * r) api->draw_pixel(cxp + dx, cyp + dy, 1);
+          for (int dy = -r; dy <= r; ++dy)
+            for (int dx = -r; dx <= r; ++dx)
+              if (dx * dx + dy * dy <= r * r) api->draw_pixel(cxp + dx, cyp + dy, 1);
         } else {
-          for (int dy = -r; dy <= r; ++dy) for (int dx = -r; dx <= r; ++dx) if (dx * dx + dy * dy <= r * r && dx * dx + dy * dy >= (r - 1) * (r - 1)) api->draw_pixel(cxp + dx, cyp + dy, 1);
+          for (int dy = -r; dy <= r; ++dy)
+            for (int dx = -r; dx <= r; ++dx)
+              if (dx * dx + dy * dy <= r * r && dx * dx + dy * dy >= (r - 1) * (r - 1))
+                api->draw_pixel(cxp + dx, cyp + dy, 1);
           api->fill_rect(cxp - r / 2, cyp - r / 2, r, r, 0);
         }
       }

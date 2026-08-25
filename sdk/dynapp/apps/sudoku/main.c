@@ -96,22 +96,40 @@ static uint32_t on_loop(const CpApi* api, const CpInput* in) {
       g_view = 1;
       return CP_LOOP_RENDER;
     }
-    if (sel != g_diff) { g_diff = sel; return CP_LOOP_RENDER; }
+    if (sel != g_diff) {
+      g_diff = sel;
+      return CP_LOOP_RENDER;
+    }
     return CP_LOOP_IDLE;
   }
 
-  if (in->released & CP_BTN_BACK) { g_view = 0; return CP_LOOP_RENDER; }
+  if (in->released & CP_BTN_BACK) {
+    g_view = 0;
+    return CP_LOOP_RENDER;
+  }
   if (g_done) {
-    if (in->released & CP_BTN_CONFIRM) { app_message(api, "生成中…"); new_game(api, g_diff); return CP_LOOP_RENDER; }
+    if (in->released & CP_BTN_CONFIRM) {
+      app_message(api, "生成中…");
+      new_game(api, g_diff);
+      return CP_LOOP_RENDER;
+    }
     return CP_LOOP_IDLE;
   }
   uint32_t f = CP_LOOP_IDLE;
   // Move cursor with page keys to keep up/down for value entry.
-  if (in->released & CP_BTN_LEFT) { g_cx = (g_cx + 8) % 9; f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_RIGHT) { g_cx = (g_cx + 1) % 9; f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_PAGE_BACK) { g_cy = (g_cy + 8) % 9; f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_PAGE_FORWARD) { g_cy = (g_cy + 1) % 9; f = CP_LOOP_RENDER; }
-  else if (!g_given[g_cy][g_cx] && (in->released & CP_BTN_UP)) {
+  if (in->released & CP_BTN_LEFT) {
+    g_cx = (g_cx + 8) % 9;
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_RIGHT) {
+    g_cx = (g_cx + 1) % 9;
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_PAGE_BACK) {
+    g_cy = (g_cy + 8) % 9;
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_PAGE_FORWARD) {
+    g_cy = (g_cy + 1) % 9;
+    f = CP_LOOP_RENDER;
+  } else if (!g_given[g_cy][g_cx] && (in->released & CP_BTN_UP)) {
     g_grid[g_cy][g_cx] = (g_grid[g_cy][g_cx] + 1) % 10;
     f = CP_LOOP_RENDER;
   } else if (!g_given[g_cy][g_cx] && (in->released & CP_BTN_DOWN)) {

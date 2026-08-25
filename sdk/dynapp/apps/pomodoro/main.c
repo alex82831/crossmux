@@ -18,10 +18,10 @@ enum { PHASE_FOCUS, PHASE_BREAK, PHASE_LONG };
 
 static int g_sched;
 static int g_phase;
-static int g_round;       // completed focus rounds in this cycle (0..3)
+static int g_round;  // completed focus rounds in this cycle (0..3)
 static int g_running;
-static uint32_t g_end_ms;      // millis when the current phase ends
-static uint32_t g_remain_ms;   // frozen remaining while paused
+static uint32_t g_end_ms;          // millis when the current phase ends
+static uint32_t g_remain_ms;       // frozen remaining while paused
 static uint32_t g_today, g_total;  // completed focus sessions
 static AppAbout g_about;
 
@@ -149,8 +149,10 @@ static void on_render(const CpApi* api) {
   const int pipY = h / 2 + 40;
   for (int i = 0; i < 4; ++i) {
     const int px = w / 2 - 30 + i * 20;
-    if (i < g_round) api->fill_rect(px, pipY, 12, 12, 1);
-    else api->draw_rect(px, pipY, 12, 12, 1);
+    if (i < g_round)
+      api->fill_rect(px, pipY, 12, 12, 1);
+    else
+      api->draw_rect(px, pipY, 12, 12, 1);
   }
 
   cp_snprintf(buf, sizeof(buf), "今日 %u · 累计 %u", g_today, g_total);

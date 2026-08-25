@@ -11,10 +11,10 @@
 // 1车 2马 3炮 4相 5仕 6帅 7兵
 enum { R_CHE = 1, R_MA, R_PAO, R_XIANG, R_SHI, R_JIANG, R_BING };
 static signed char g_b[10][9];
-static int g_selX, g_selY;   // cursor
+static int g_selX, g_selY;              // cursor
 static int g_pickX = -1, g_pickY = -1;  // chosen piece (-1 none)
-static int g_turn;   // 1 red(human) -1 black(ai)
-static int g_over;   // 0 playing, 1 red win, 2 black win
+static int g_turn;                      // 1 red(human) -1 black(ai)
+static int g_over;                      // 0 playing, 1 red win, 2 black win
 static int g_view;
 static AppAbout g_about;
 
@@ -56,8 +56,11 @@ static int pseudo_legal(int fx, int fy, int tx, int ty) {
   if (type == R_MA) {
     if (!((adx == 1 && ady == 2) || (adx == 2 && ady == 1))) return 0;
     // hobbling leg
-    if (adx == 2) { if (g_b[fy][fx + dx / 2]) return 0; }
-    else { if (g_b[fy + dy / 2][fx]) return 0; }
+    if (adx == 2) {
+      if (g_b[fy][fx + dx / 2]) return 0;
+    } else {
+      if (g_b[fy + dy / 2][fx]) return 0;
+    }
     return 1;
   }
   if (type == R_PAO) {
@@ -99,8 +102,8 @@ static int pseudo_legal(int fx, int fy, int tx, int ty) {
   }
   if (type == R_BING) {
     if (red) {
-      if (dy == -1 && dx == 0) return 1;               // forward
-      if (fy <= 4 && ady == 0 && adx == 1) return 1;   // sideways past river
+      if (dy == -1 && dx == 0) return 1;              // forward
+      if (fy <= 4 && ady == 0 && adx == 1) return 1;  // sideways past river
       return 0;
     } else {
       if (dy == 1 && dx == 0) return 1;
@@ -115,8 +118,13 @@ static void find_general(int side, int* gx, int* gy) {
   const int target = side > 0 ? R_JIANG : -R_JIANG;
   for (int y = 0; y < 10; ++y)
     for (int x = 0; x < 9; ++x)
-      if (g_b[y][x] == target) { *gx = x; *gy = y; return; }
-  *gx = -1; *gy = -1;
+      if (g_b[y][x] == target) {
+        *gx = x;
+        *gy = y;
+        return;
+      }
+  *gx = -1;
+  *gy = -1;
 }
 
 // Is `side` in check?
@@ -165,7 +173,9 @@ static int eval_board(void) {
   return score;
 }
 
-typedef struct { signed char fx, fy, tx, ty; } Move;
+typedef struct {
+  signed char fx, fy, tx, ty;
+} Move;
 
 static int gen_moves(int side, Move* out, int cap) {
   int n = 0;
@@ -176,7 +186,10 @@ static int gen_moves(int side, Move* out, int cap) {
       for (int ty = 0; ty < 10 && n < cap; ++ty)
         for (int tx = 0; tx < 9 && n < cap; ++tx)
           if (legal(fx, fy, tx, ty)) {
-            out[n].fx = fx; out[n].fy = fy; out[n].tx = tx; out[n].ty = ty;
+            out[n].fx = fx;
+            out[n].fy = fy;
+            out[n].tx = tx;
+            out[n].ty = ty;
             ++n;
           }
     }
@@ -212,17 +225,23 @@ static int search(int side, int depth, int alpha, int beta) {
 static void ai_move(const CpApi* api) {
   Move mv[120];
   const int n = gen_moves(-1, mv, 120);
-  if (n == 0) { g_over = 1; return; }
+  if (n == 0) {
+    g_over = 1;
+    return;
+  }
   int bestVal = 1000000, bestI = 0;
   for (int i = 0; i < n; ++i) {
     const int p = g_b[mv[i].fy][mv[i].fx], cap = g_b[mv[i].ty][mv[i].tx];
     g_b[mv[i].ty][mv[i].tx] = p;
     g_b[mv[i].fy][mv[i].fx] = 0;
     int val = search(1, 1, -1000000, 1000000);  // 2-ply total
-    val += (int)(api->random_u32() % 9) - 4;     // tie jitter
+    val += (int)(api->random_u32() % 9) - 4;    // tie jitter
     g_b[mv[i].fy][mv[i].fx] = p;
     g_b[mv[i].ty][mv[i].tx] = cap;
-    if (val < bestVal) { bestVal = val; bestI = i; }
+    if (val < bestVal) {
+      bestVal = val;
+      bestI = i;
+    }
   }
   const Move* m = &mv[bestI];
   g_b[m->ty][m->tx] = g_b[m->fy][m->fx];
@@ -235,13 +254,18 @@ static void ai_move(const CpApi* api) {
 
 static void reset(void) {
   memcpy(g_b, kInit, sizeof(g_b));
-  g_selX = 4; g_selY = 9;
+  g_selX = 4;
+  g_selY = 9;
   g_pickX = g_pickY = -1;
   g_turn = 1;
   g_over = 0;
 }
 
-static int32_t on_enter(const CpApi* api) { (void)api; g_view = 0; return 0; }
+static int32_t on_enter(const CpApi* api) {
+  (void)api;
+  g_view = 0;
+  return 0;
+}
 
 static uint32_t on_loop(const CpApi* api, const CpInput* in) {
   int repaint = 0;
@@ -249,17 +273,27 @@ static uint32_t on_loop(const CpApi* api, const CpInput* in) {
 
   if (g_view == 0) {
     if (in->released & CP_BTN_BACK) return CP_LOOP_EXIT;
-    if (in->released & CP_BTN_CONFIRM) { reset(); g_view = 1; return CP_LOOP_RENDER; }
+    if (in->released & CP_BTN_CONFIRM) {
+      reset();
+      g_view = 1;
+      return CP_LOOP_RENDER;
+    }
     return CP_LOOP_IDLE;
   }
 
   if (in->released & CP_BTN_BACK) {
-    if (g_pickX >= 0) { g_pickX = g_pickY = -1; return CP_LOOP_RENDER; }
+    if (g_pickX >= 0) {
+      g_pickX = g_pickY = -1;
+      return CP_LOOP_RENDER;
+    }
     g_view = 0;
     return CP_LOOP_RENDER;
   }
   if (g_over) {
-    if (in->released & CP_BTN_CONFIRM) { reset(); return CP_LOOP_RENDER; }
+    if (in->released & CP_BTN_CONFIRM) {
+      reset();
+      return CP_LOOP_RENDER;
+    }
     return CP_LOOP_IDLE;
   }
   if (g_turn == -1) {  // AI turn (blocking)
@@ -267,13 +301,24 @@ static uint32_t on_loop(const CpApi* api, const CpInput* in) {
     return CP_LOOP_RENDER;
   }
   uint32_t f = CP_LOOP_IDLE;
-  if (in->released & CP_BTN_LEFT) { g_selX = (g_selX + 8) % 9; f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_RIGHT) { g_selX = (g_selX + 1) % 9; f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_UP) { g_selY = (g_selY + 9) % 10; f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_DOWN) { g_selY = (g_selY + 1) % 10; f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_CONFIRM) {
+  if (in->released & CP_BTN_LEFT) {
+    g_selX = (g_selX + 8) % 9;
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_RIGHT) {
+    g_selX = (g_selX + 1) % 9;
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_UP) {
+    g_selY = (g_selY + 9) % 10;
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_DOWN) {
+    g_selY = (g_selY + 1) % 10;
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_CONFIRM) {
     if (g_pickX < 0) {
-      if (g_b[g_selY][g_selX] > 0) { g_pickX = g_selX; g_pickY = g_selY; }
+      if (g_b[g_selY][g_selX] > 0) {
+        g_pickX = g_selX;
+        g_pickY = g_selY;
+      }
     } else {
       if (legal(g_pickX, g_pickY, g_selX, g_selY)) {
         g_b[g_selY][g_selX] = g_b[g_pickY][g_pickX];
@@ -283,7 +328,8 @@ static uint32_t on_loop(const CpApi* api, const CpInput* in) {
         Move tmp[120];
         if (gen_moves(-1, tmp, 120) == 0) g_over = 1;  // AI mated
       } else if (g_b[g_selY][g_selX] > 0) {
-        g_pickX = g_selX; g_pickY = g_selY;  // reselect
+        g_pickX = g_selX;
+        g_pickY = g_selY;  // reselect
       } else {
         g_pickX = g_pickY = -1;
       }
@@ -315,7 +361,9 @@ static void on_render(const CpApi* api) {
     return;
   }
 
-  const char* status = g_over == 1 ? "你赢了！" : g_over == 2 ? "AI 获胜" : (g_turn == 1 ? (in_check(1) ? "将军！" : "你的回合") : "AI 思考…");
+  const char* status = g_over == 1   ? "你赢了！"
+                       : g_over == 2 ? "AI 获胜"
+                                     : (g_turn == 1 ? (in_check(1) ? "将军！" : "你的回合") : "AI 思考…");
   const int top = app_header(api, "中国象棋", status);
 
   const int cell = (w - 20) / 9;

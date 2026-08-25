@@ -44,8 +44,8 @@ static const char* kLevels[] = {
 };
 #define NLEVELS (int)(sizeof(kLevels) / sizeof(kLevels[0]))
 
-static char g_map[MAXH][MAXW];   // static walls + targets
-static char g_box[MAXH][MAXW];   // 1 where a box sits
+static char g_map[MAXH][MAXW];  // static walls + targets
+static char g_box[MAXH][MAXW];  // 1 where a box sits
 static int g_w, g_h;
 static int g_px, g_py;
 static int g_level;
@@ -67,14 +67,24 @@ static void parse_level(int idx) {
   int x = 0, y = 0;
   g_w = 0;
   for (const char* p = s; *p; ++p) {
-    if (*p == '\n') { y++; x = 0; continue; }
+    if (*p == '\n') {
+      y++;
+      x = 0;
+      continue;
+    }
     if (y < MAXH && x < MAXW) {
       const char c = *p;
-      if (c == '#') g_map[y][x] = '#';
-      else if (c == '.' || c == '*' || c == '+') g_map[y][x] = '.';
-      else g_map[y][x] = ' ';
+      if (c == '#')
+        g_map[y][x] = '#';
+      else if (c == '.' || c == '*' || c == '+')
+        g_map[y][x] = '.';
+      else
+        g_map[y][x] = ' ';
       if (c == '$' || c == '*') g_box[y][x] = 1;
-      if (c == '@' || c == '+') { g_px = x; g_py = y; }
+      if (c == '@' || c == '+') {
+        g_px = x;
+        g_py = y;
+      }
       x++;
       if (x > g_w) g_w = x;
     }
@@ -157,12 +167,22 @@ static uint32_t on_loop(const CpApi* api, const CpInput* in) {
   if (g_view == 0) {
     if (in->released & CP_BTN_BACK) return CP_LOOP_EXIT;
     int sel = g_level;
-    if (app_menu_input(api, in, &sel, NLEVELS)) { load_level(sel); g_view = 1; return CP_LOOP_RENDER; }
-    if (sel != g_level) { g_level = sel; return CP_LOOP_RENDER; }
+    if (app_menu_input(api, in, &sel, NLEVELS)) {
+      load_level(sel);
+      g_view = 1;
+      return CP_LOOP_RENDER;
+    }
+    if (sel != g_level) {
+      g_level = sel;
+      return CP_LOOP_RENDER;
+    }
     return CP_LOOP_IDLE;
   }
 
-  if (in->released & CP_BTN_BACK) { g_view = 0; return CP_LOOP_RENDER; }
+  if (in->released & CP_BTN_BACK) {
+    g_view = 0;
+    return CP_LOOP_RENDER;
+  }
   uint32_t f = CP_LOOP_IDLE;
   if (g_done) {
     if (in->released & CP_BTN_CONFIRM) {
@@ -172,12 +192,25 @@ static uint32_t on_loop(const CpApi* api, const CpInput* in) {
     }
     return CP_LOOP_IDLE;
   }
-  if (in->released & CP_BTN_LEFT) { step(-1, 0); f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_RIGHT) { step(1, 0); f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_UP) { step(0, -1); f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_DOWN) { step(0, 1); f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_CONFIRM) { undo(); f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_PAGE_FORWARD) { load_level(g_level); f = CP_LOOP_RENDER; }  // restart
+  if (in->released & CP_BTN_LEFT) {
+    step(-1, 0);
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_RIGHT) {
+    step(1, 0);
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_UP) {
+    step(0, -1);
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_DOWN) {
+    step(0, 1);
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_CONFIRM) {
+    undo();
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_PAGE_FORWARD) {
+    load_level(g_level);
+    f = CP_LOOP_RENDER;
+  }  // restart
   if (f == CP_LOOP_IDLE) api->delay_ms(40);
   return f;
 }
@@ -192,7 +225,10 @@ static void on_render(const CpApi* api) {
     app_header(api, "推箱子", "选择关卡");
     static char lb[NLEVELS][20];
     static const char* pt[NLEVELS];
-    for (int i = 0; i < NLEVELS; ++i) { cp_snprintf(lb[i], sizeof(lb[0]), "第 %d 关", i + 1); pt[i] = lb[i]; }
+    for (int i = 0; i < NLEVELS; ++i) {
+      cp_snprintf(lb[i], sizeof(lb[0]), "第 %d 关", i + 1);
+      pt[i] = lb[i];
+    }
     app_menu_draw(api, 60, pt, NLEVELS, g_level);
     app_hints(api, "返回", "开始", "上下选择", "");
     if (g_about.open) app_about_draw(api, "推箱子");
@@ -219,8 +255,12 @@ static void on_render(const CpApi* api) {
       }
       if (g_box[y][x]) {
         const int on = (g_map[y][x] == '.');
-        if (on) api->fill_rect(px + 3, py + 3, cell - 6, cell - 6, 1);
-        else { api->draw_rect(px + 3, py + 3, cell - 6, cell - 6, 1); api->draw_line(px + 3, py + 3, px + cell - 3, py + cell - 3, 1); }
+        if (on)
+          api->fill_rect(px + 3, py + 3, cell - 6, cell - 6, 1);
+        else {
+          api->draw_rect(px + 3, py + 3, cell - 6, cell - 6, 1);
+          api->draw_line(px + 3, py + 3, px + cell - 3, py + cell - 3, 1);
+        }
       }
       if (x == g_px && y == g_py) {
         api->draw_rect(px + 2, py + 2, cell - 4, cell - 4, 1);

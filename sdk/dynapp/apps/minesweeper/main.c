@@ -120,22 +120,41 @@ static uint32_t on_loop(const CpApi* api, const CpInput* in) {
       g_view = 1;
       return CP_LOOP_RENDER;
     }
-    if (sel != g_diff) { g_diff = sel; return CP_LOOP_RENDER; }
+    if (sel != g_diff) {
+      g_diff = sel;
+      return CP_LOOP_RENDER;
+    }
     return CP_LOOP_IDLE;
   }
 
-  if (in->released & CP_BTN_BACK) { g_view = 0; return CP_LOOP_RENDER; }
+  if (in->released & CP_BTN_BACK) {
+    g_view = 0;
+    return CP_LOOP_RENDER;
+  }
   uint32_t f = CP_LOOP_IDLE;
   if (g_state) {
-    if (in->released & CP_BTN_CONFIRM) { new_game(api, g_diff); return CP_LOOP_RENDER; }
+    if (in->released & CP_BTN_CONFIRM) {
+      new_game(api, g_diff);
+      return CP_LOOP_RENDER;
+    }
     return CP_LOOP_IDLE;
   }
-  if (in->released & CP_BTN_LEFT) { g_cx = (g_cx + g_w - 1) % g_w; f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_RIGHT) { g_cx = (g_cx + 1) % g_w; f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_UP) { g_cy = (g_cy + g_h - 1) % g_h; f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_DOWN) { g_cy = (g_cy + 1) % g_h; f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_CONFIRM) { reveal(api); f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_PAGE_FORWARD) {  // flag toggle
+  if (in->released & CP_BTN_LEFT) {
+    g_cx = (g_cx + g_w - 1) % g_w;
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_RIGHT) {
+    g_cx = (g_cx + 1) % g_w;
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_UP) {
+    g_cy = (g_cy + g_h - 1) % g_h;
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_DOWN) {
+    g_cy = (g_cy + 1) % g_h;
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_CONFIRM) {
+    reveal(api);
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_PAGE_FORWARD) {  // flag toggle
     if (!g_open[g_cy][g_cx]) g_flag[g_cy][g_cx] ^= 1;
     f = CP_LOOP_RENDER;
   }
@@ -199,8 +218,10 @@ static void on_render(const CpApi* api) {
   api->draw_rect(bx + g_cx * cell - 1, by + g_cy * cell - 1, cell + 2, cell + 2, 1);
   api->draw_rect(bx + g_cx * cell + 1, by + g_cy * cell + 1, cell - 2, cell - 2, 1);
 
-  if (g_state == 1) api->draw_text_centered(CP_FONT_UI_LARGE, w / 2, h - 60, "胜利！确认重来", 1, CP_TEXT_BOLD);
-  else if (g_state == 2) api->draw_text_centered(CP_FONT_UI_LARGE, w / 2, h - 60, "踩雷了 · 确认重来", 1, CP_TEXT_BOLD);
+  if (g_state == 1)
+    api->draw_text_centered(CP_FONT_UI_LARGE, w / 2, h - 60, "胜利！确认重来", 1, CP_TEXT_BOLD);
+  else if (g_state == 2)
+    api->draw_text_centered(CP_FONT_UI_LARGE, w / 2, h - 60, "踩雷了 · 确认重来", 1, CP_TEXT_BOLD);
 
   app_hints(api, "返回", g_state ? "重来" : "翻开", "方向移动", "翻页=旗");
   if (g_about.open) app_about_draw(api, "扫雷");

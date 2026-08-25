@@ -130,11 +130,19 @@ static uint32_t on_loop(const CpApi* api, const CpInput* in) {
 
   if (g_view == 0) {
     if (in->released & CP_BTN_BACK) return CP_LOOP_EXIT;
-    if (g_feedCount > 0 && (in->released & CP_BTN_UP)) { g_curFeed = (g_curFeed + g_feedCount - 1) % g_feedCount; return CP_LOOP_RENDER; }
-    if (g_feedCount > 0 && (in->released & CP_BTN_DOWN)) { g_curFeed = (g_curFeed + 1) % g_feedCount; return CP_LOOP_RENDER; }
+    if (g_feedCount > 0 && (in->released & CP_BTN_UP)) {
+      g_curFeed = (g_curFeed + g_feedCount - 1) % g_feedCount;
+      return CP_LOOP_RENDER;
+    }
+    if (g_feedCount > 0 && (in->released & CP_BTN_DOWN)) {
+      g_curFeed = (g_curFeed + 1) % g_feedCount;
+      return CP_LOOP_RENDER;
+    }
     if (in->released & CP_BTN_CONFIRM) {
       app_message(api, "抓取中…");
-      if (fetch_feed(api, g_curFeed) != 0) { load_cache(api, g_curFeed); }
+      if (fetch_feed(api, g_curFeed) != 0) {
+        load_cache(api, g_curFeed);
+      }
       g_curItem = 0;
       g_view = 1;
       return CP_LOOP_RENDER;
@@ -151,9 +159,18 @@ static uint32_t on_loop(const CpApi* api, const CpInput* in) {
   }
 
   // article list
-  if (in->released & CP_BTN_BACK) { g_view = 0; return CP_LOOP_RENDER; }
-  if (g_itemCount > 0 && (in->released & CP_BTN_UP)) { g_curItem = (g_curItem + g_itemCount - 1) % g_itemCount; return CP_LOOP_RENDER; }
-  if (g_itemCount > 0 && (in->released & CP_BTN_DOWN)) { g_curItem = (g_curItem + 1) % g_itemCount; return CP_LOOP_RENDER; }
+  if (in->released & CP_BTN_BACK) {
+    g_view = 0;
+    return CP_LOOP_RENDER;
+  }
+  if (g_itemCount > 0 && (in->released & CP_BTN_UP)) {
+    g_curItem = (g_curItem + g_itemCount - 1) % g_itemCount;
+    return CP_LOOP_RENDER;
+  }
+  if (g_itemCount > 0 && (in->released & CP_BTN_DOWN)) {
+    g_curItem = (g_curItem + 1) % g_itemCount;
+    return CP_LOOP_RENDER;
+  }
   api->delay_ms(50);
   return CP_LOOP_IDLE;
 }

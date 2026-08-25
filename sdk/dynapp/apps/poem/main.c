@@ -11,8 +11,8 @@ typedef struct {
 } Poem;
 
 static Poem g_hist[HIST];
-static int g_count;   // number stored
-static int g_view;    // index being shown (0 = newest)
+static int g_count;  // number stored
+static int g_view;   // index being shown (0 = newest)
 static AppAbout g_about;
 
 static void save(const CpApi* api) {
@@ -60,8 +60,14 @@ static uint32_t on_loop(const CpApi* api, const CpInput* in) {
     api->delay_ms(600);
     return CP_LOOP_RENDER;
   }
-  if ((in->released & CP_BTN_LEFT) && g_view + 1 < g_count) { ++g_view; return CP_LOOP_RENDER; }
-  if ((in->released & CP_BTN_RIGHT) && g_view > 0) { --g_view; return CP_LOOP_RENDER; }
+  if ((in->released & CP_BTN_LEFT) && g_view + 1 < g_count) {
+    ++g_view;
+    return CP_LOOP_RENDER;
+  }
+  if ((in->released & CP_BTN_RIGHT) && g_view > 0) {
+    --g_view;
+    return CP_LOOP_RENDER;
+  }
   api->delay_ms(50);
   return CP_LOOP_IDLE;
 }

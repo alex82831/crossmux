@@ -68,12 +68,20 @@ static uint32_t on_loop(const CpApi* api, const CpInput* in) {
   if (app_about_input(api, in, &g_about, 1, &repaint)) return repaint ? CP_LOOP_RENDER : CP_LOOP_IDLE;
   if (in->released & CP_BTN_BACK) return CP_LOOP_EXIT;
   if (in->released & CP_BTN_CONFIRM) {
-    if (!g_revealed) g_revealed = 1;
-    else pick_next(api);
+    if (!g_revealed)
+      g_revealed = 1;
+    else
+      pick_next(api);
     return CP_LOOP_RENDER;
   }
-  if ((in->released & CP_BTN_UP) || (in->released & CP_BTN_LEFT)) { grade(api, 1); return CP_LOOP_RENDER; }
-  if ((in->released & CP_BTN_DOWN) || (in->released & CP_BTN_RIGHT)) { grade(api, 0); return CP_LOOP_RENDER; }
+  if ((in->released & CP_BTN_UP) || (in->released & CP_BTN_LEFT)) {
+    grade(api, 1);
+    return CP_LOOP_RENDER;
+  }
+  if ((in->released & CP_BTN_DOWN) || (in->released & CP_BTN_RIGHT)) {
+    grade(api, 0);
+    return CP_LOOP_RENDER;
+  }
   api->delay_ms(50);
   return CP_LOOP_IDLE;
 }
@@ -86,7 +94,12 @@ static void on_render(const CpApi* api) {
 
   int fresh = 0, learning = 0, mastered = 0;
   for (int i = 0; i < VOCAB_COUNT; ++i) {
-    if (g_box[i] == 0) ++fresh; else if (g_box[i] == 1) ++learning; else ++mastered;
+    if (g_box[i] == 0)
+      ++fresh;
+    else if (g_box[i] == 1)
+      ++learning;
+    else
+      ++mastered;
   }
   cp_snprintf(buf, sizeof(buf), "%d/%d", mastered, VOCAB_COUNT);
   app_header(api, "单词卡", buf);

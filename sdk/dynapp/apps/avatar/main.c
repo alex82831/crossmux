@@ -46,7 +46,8 @@ static void draw_face(const CpApi* api) {
     const int er = rr(8, 20);
     for (int dy = -er; dy <= er; ++dy)
       for (int dx = -er; dx <= er; ++dx)
-        if (dx * dx + dy * dy <= er * er && dx * dx + dy * dy >= (er - 2) * (er - 2)) api->draw_pixel(ex + dx, eyeY + dy, 1);
+        if (dx * dx + dy * dy <= er * er && dx * dx + dy * dy >= (er - 2) * (er - 2))
+          api->draw_pixel(ex + dx, eyeY + dy, 1);
     // pupil
     const int px = ex + rr(-4, 4), py = eyeY + rr(-4, 4), pr = rr(2, 5);
     api->fill_rect(px - pr, py - pr, 2 * pr, 2 * pr, 1);

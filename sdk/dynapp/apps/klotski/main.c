@@ -149,10 +149,14 @@ static uint32_t on_loop(const CpApi* api, const CpInput* in) {
     f = CP_LOOP_RENDER;
   }
   int dx = 0, dy = 0;
-  if (in->released & CP_BTN_LEFT) dx = -1;
-  else if (in->released & CP_BTN_RIGHT) dx = 1;
-  else if (in->released & CP_BTN_UP) dy = -1;
-  else if (in->released & CP_BTN_DOWN) dy = 1;
+  if (in->released & CP_BTN_LEFT)
+    dx = -1;
+  else if (in->released & CP_BTN_RIGHT)
+    dx = 1;
+  else if (in->released & CP_BTN_UP)
+    dy = -1;
+  else if (in->released & CP_BTN_DOWN)
+    dy = 1;
   if (dx || dy) {
     if (can_move(g_sel, dx, dy)) {
       do_move(g_sel, dx, dy);
@@ -179,8 +183,11 @@ static void on_render(const CpApi* api) {
     static char labels[NLAY][40];
     static const char* ptrs[NLAY];
     for (int i = 0; i < NLAY; ++i) {
-      if (g_best[i]) cp_snprintf(labels[i], sizeof(labels[0]), "%s（最少%d·最佳%d）", kLayouts[i].name, kLayouts[i].minSteps, g_best[i]);
-      else cp_snprintf(labels[i], sizeof(labels[0]), "%s（最少%d步）", kLayouts[i].name, kLayouts[i].minSteps);
+      if (g_best[i])
+        cp_snprintf(labels[i], sizeof(labels[0]), "%s（最少%d·最佳%d）", kLayouts[i].name, kLayouts[i].minSteps,
+                    g_best[i]);
+      else
+        cp_snprintf(labels[i], sizeof(labels[0]), "%s（最少%d步）", kLayouts[i].name, kLayouts[i].minSteps);
       ptrs[i] = labels[i];
     }
     app_menu_draw(api, 52, ptrs, NLAY, g_layout);
@@ -207,8 +214,10 @@ static void on_render(const CpApi* api) {
     const int pw = kW[p->type] * cell;
     const int ph = kH[p->type] * cell;
     const int sel = (i == g_sel);
-    if (p->type == 0) api->fill_rect(px + 2, py + 2, pw - 4, ph - 4, 1);  // Cao filled
-    else api->draw_rect(px + 2, py + 2, pw - 4, ph - 4, 1);
+    if (p->type == 0)
+      api->fill_rect(px + 2, py + 2, pw - 4, ph - 4, 1);  // Cao filled
+    else
+      api->draw_rect(px + 2, py + 2, pw - 4, ph - 4, 1);
     if (sel) api->draw_rect(px + 5, py + 5, pw - 10, ph - 10, p->type == 0 ? 0 : 1);
   }
 

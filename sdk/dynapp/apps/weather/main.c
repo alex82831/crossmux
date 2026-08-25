@@ -37,11 +37,25 @@ static int read_array(const char* buf, const char* key, long* out, int max) {
     while (*p == ',' || *p == ' ') ++p;
     if (*p == ']') break;
     int neg = 0;
-    if (*p == '-') { neg = 1; ++p; }
+    if (*p == '-') {
+      neg = 1;
+      ++p;
+    }
     long ip = 0, fp = 0, scale = 1;
     int any = 0;
-    while (*p >= '0' && *p <= '9') { ip = ip * 10 + (*p - '0'); ++p; any = 1; }
-    if (*p == '.') { ++p; for (int d = 0; d < 3 && *p >= '0' && *p <= '9'; ++d) { fp = fp * 10 + (*p - '0'); scale *= 10; ++p; } }
+    while (*p >= '0' && *p <= '9') {
+      ip = ip * 10 + (*p - '0');
+      ++p;
+      any = 1;
+    }
+    if (*p == '.') {
+      ++p;
+      for (int d = 0; d < 3 && *p >= '0' && *p <= '9'; ++d) {
+        fp = fp * 10 + (*p - '0');
+        scale *= 10;
+        ++p;
+      }
+    }
     if (!any) break;
     long v = ip * 1000 + fp * (1000 / scale);
     out[n++] = neg ? -v : v;
@@ -52,17 +66,45 @@ static int read_array(const char* buf, const char* key, long* out, int max) {
 
 static void save_cache(const CpApi* api) {
   // Simple binary cache of parsed values.
-  struct { int city, code, days, cur; long temp; long mx[5], mn[5]; int cd[5], pp[5]; } c;
+  struct {
+    int city, code, days, cur;
+    long temp;
+    long mx[5], mn[5];
+    int cd[5], pp[5];
+  } c;
   memset(&c, 0, sizeof(c));
-  c.city = g_city; c.code = g_curCode; c.days = g_days; c.cur = 1; c.temp = g_curTemp1000;
-  for (int i = 0; i < 5; ++i) { c.mx[i] = g_maxT[i]; c.mn[i] = g_minT[i]; c.cd[i] = g_code[i]; c.pp[i] = g_pop[i]; }
+  c.city = g_city;
+  c.code = g_curCode;
+  c.days = g_days;
+  c.cur = 1;
+  c.temp = g_curTemp1000;
+  for (int i = 0; i < 5; ++i) {
+    c.mx[i] = g_maxT[i];
+    c.mn[i] = g_minT[i];
+    c.cd[i] = g_code[i];
+    c.pp[i] = g_pop[i];
+  }
   api->file_write("wx.bin", &c, sizeof(c));
 }
 static void load_cache(const CpApi* api) {
-  struct { int city, code, days, cur; long temp; long mx[5], mn[5]; int cd[5], pp[5]; } c;
+  struct {
+    int city, code, days, cur;
+    long temp;
+    long mx[5], mn[5];
+    int cd[5], pp[5];
+  } c;
   if (api->file_read("wx.bin", &c, sizeof(c)) != (int)sizeof(c)) return;
-  g_city = c.city; g_curCode = c.code; g_days = c.days; g_curTemp1000 = c.temp; g_haveData = 1;
-  for (int i = 0; i < 5; ++i) { g_maxT[i] = c.mx[i]; g_minT[i] = c.mn[i]; g_code[i] = c.cd[i]; g_pop[i] = c.pp[i]; }
+  g_city = c.city;
+  g_curCode = c.code;
+  g_days = c.days;
+  g_curTemp1000 = c.temp;
+  g_haveData = 1;
+  for (int i = 0; i < 5; ++i) {
+    g_maxT[i] = c.mx[i];
+    g_minT[i] = c.mn[i];
+    g_code[i] = c.cd[i];
+    g_pop[i] = c.pp[i];
+  }
 }
 
 static int fetch(const CpApi* api) {
@@ -109,8 +151,14 @@ static uint32_t on_loop(const CpApi* api, const CpInput* in) {
   int repaint = 0;
   if (app_about_input(api, in, &g_about, 1, &repaint)) return repaint ? CP_LOOP_RENDER : CP_LOOP_IDLE;
   if (in->released & CP_BTN_BACK) return CP_LOOP_EXIT;
-  if (in->released & CP_BTN_UP) { g_city = (g_city + WCITY_COUNT - 1) % WCITY_COUNT; return CP_LOOP_RENDER; }
-  if (in->released & CP_BTN_DOWN) { g_city = (g_city + 1) % WCITY_COUNT; return CP_LOOP_RENDER; }
+  if (in->released & CP_BTN_UP) {
+    g_city = (g_city + WCITY_COUNT - 1) % WCITY_COUNT;
+    return CP_LOOP_RENDER;
+  }
+  if (in->released & CP_BTN_DOWN) {
+    g_city = (g_city + 1) % WCITY_COUNT;
+    return CP_LOOP_RENDER;
+  }
   if (in->released & CP_BTN_CONFIRM) {
     app_message(api, "联网获取中…");
     const int r = fetch(api);
@@ -143,8 +191,8 @@ static void on_render(const CpApi* api) {
   int y = 128;
   const char* wk[] = {"今天", "明天", "后天", "第4天", "第5天"};
   for (int i = 0; i < g_days && i < 5; ++i) {
-    cp_snprintf(buf, sizeof(buf), "%s  %d~%d°C  %s  降水%d%%", wk[i], (int)(g_minT[i] / 1000),
-                (int)(g_maxT[i] / 1000), code_desc(g_code[i]), g_pop[i]);
+    cp_snprintf(buf, sizeof(buf), "%s  %d~%d°C  %s  降水%d%%", wk[i], (int)(g_minT[i] / 1000), (int)(g_maxT[i] / 1000),
+                code_desc(g_code[i]), g_pop[i]);
     api->draw_text(CP_FONT_UI, 20, y, buf, 1, CP_TEXT_REGULAR);
     y += api->line_height(CP_FONT_UI) + 10;
   }

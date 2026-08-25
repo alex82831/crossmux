@@ -48,8 +48,10 @@ void app_menu_draw(const CpApi* api, int top_y, const char* const* items, int co
   for (int i = 0; i < count; ++i) {
     const int y = top_y + i * (rowH + 6);
     const int selrow = (i == sel);
-    if (selrow) api->fill_rect(pad, y, w - 2 * pad, rowH, 1);
-    else api->draw_rect(pad, y, w - 2 * pad, rowH, 1);
+    if (selrow)
+      api->fill_rect(pad, y, w - 2 * pad, rowH, 1);
+    else
+      api->draw_rect(pad, y, w - 2 * pad, rowH, 1);
     const int tw = api->text_width(CP_FONT_UI_LARGE, items[i], CP_TEXT_REGULAR);
     const int th = api->line_height(CP_FONT_UI_LARGE);
     api->draw_text(CP_FONT_UI_LARGE, (w - tw) / 2, y + (rowH - th) / 2, items[i], selrow ? 0 : 1, CP_TEXT_REGULAR);
@@ -148,14 +150,25 @@ int app_json_int1000(const char* buf, const char* key, long* out) {
   ++p;
   while (*p == ' ' || *p == '\t') ++p;
   int neg = 0;
-  if (*p == '-') { neg = 1; ++p; }
+  if (*p == '-') {
+    neg = 1;
+    ++p;
+  }
   long ip = 0;
   int any = 0;
-  while (*p >= '0' && *p <= '9') { ip = ip * 10 + (*p - '0'); ++p; any = 1; }
+  while (*p >= '0' && *p <= '9') {
+    ip = ip * 10 + (*p - '0');
+    ++p;
+    any = 1;
+  }
   long fp = 0, scale = 1;
   if (*p == '.') {
     ++p;
-    for (int d = 0; d < 3 && *p >= '0' && *p <= '9'; ++d) { fp = fp * 10 + (*p - '0'); scale *= 10; ++p; }
+    for (int d = 0; d < 3 && *p >= '0' && *p <= '9'; ++d) {
+      fp = fp * 10 + (*p - '0');
+      scale *= 10;
+      ++p;
+    }
   }
   if (!any) return 0;
   long v = ip * 1000 + fp * (1000 / scale);

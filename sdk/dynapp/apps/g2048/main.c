@@ -63,19 +63,37 @@ static int move(int dir) {
     int line[N];
     for (int j = 0; j < N; ++j) {
       int r, c;
-      if (dir == 0) { r = i; c = j; }
-      else if (dir == 1) { r = i; c = N - 1 - j; }
-      else if (dir == 2) { r = j; c = i; }
-      else { r = N - 1 - j; c = i; }
+      if (dir == 0) {
+        r = i;
+        c = j;
+      } else if (dir == 1) {
+        r = i;
+        c = N - 1 - j;
+      } else if (dir == 2) {
+        r = j;
+        c = i;
+      } else {
+        r = N - 1 - j;
+        c = i;
+      }
       line[j] = g_board[r][c];
     }
     if (slide_row(line)) changed = 1;
     for (int j = 0; j < N; ++j) {
       int r, c;
-      if (dir == 0) { r = i; c = j; }
-      else if (dir == 1) { r = i; c = N - 1 - j; }
-      else if (dir == 2) { r = j; c = i; }
-      else { r = N - 1 - j; c = i; }
+      if (dir == 0) {
+        r = i;
+        c = j;
+      } else if (dir == 1) {
+        r = i;
+        c = N - 1 - j;
+      } else if (dir == 2) {
+        r = j;
+        c = i;
+      } else {
+        r = N - 1 - j;
+        c = i;
+      }
       g_board[r][c] = line[j];
     }
   }
@@ -119,10 +137,19 @@ static uint32_t on_loop(const CpApi* api, const CpInput* in) {
     reset(api);
     return CP_LOOP_RENDER;
   }
-  if (in->released & CP_BTN_LEFT) { do_move(api, 0); f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_RIGHT) { do_move(api, 1); f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_UP) { do_move(api, 2); f = CP_LOOP_RENDER; }
-  else if (in->released & CP_BTN_DOWN) { do_move(api, 3); f = CP_LOOP_RENDER; }
+  if (in->released & CP_BTN_LEFT) {
+    do_move(api, 0);
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_RIGHT) {
+    do_move(api, 1);
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_UP) {
+    do_move(api, 2);
+    f = CP_LOOP_RENDER;
+  } else if (in->released & CP_BTN_DOWN) {
+    do_move(api, 3);
+    f = CP_LOOP_RENDER;
+  }
   if (f == CP_LOOP_IDLE) api->delay_ms(40);
   return f;
 }
@@ -154,7 +181,8 @@ static void on_render(const CpApi* api) {
       }
     }
 
-  if (g_won && !g_over) api->draw_text_centered(CP_FONT_UI, w / 2, gy + cell * N + 8, "达成 2048！继续挑战", 1, CP_TEXT_BOLD);
+  if (g_won && !g_over)
+    api->draw_text_centered(CP_FONT_UI, w / 2, gy + cell * N + 8, "达成 2048！继续挑战", 1, CP_TEXT_BOLD);
   if (g_over) {
     api->draw_text_centered(CP_FONT_UI_LARGE, w / 2, gy + cell * N + 8, "游戏结束 · 确认重来", 1, CP_TEXT_BOLD);
   }

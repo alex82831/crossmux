@@ -9,7 +9,7 @@ typedef struct {
   const char* name;
 } Cur;
 static const Cur kCur[] = {
-    {"USD", "美元"}, {"EUR", "欧元"}, {"JPY", "日元"}, {"GBP", "英镑"},
+    {"USD", "美元"}, {"EUR", "欧元"}, {"JPY", "日元"},   {"GBP", "英镑"},
     {"HKD", "港币"}, {"KRW", "韩元"}, {"TWD", "新台币"}, {"AUD", "澳元"},
 };
 #define NCUR (int)(sizeof(kCur) / sizeof(kCur[0]))
@@ -63,8 +63,14 @@ static uint32_t on_loop(const CpApi* api, const CpInput* in) {
   int repaint = 0;
   if (app_about_input(api, in, &g_about, 1, &repaint)) return repaint ? CP_LOOP_RENDER : CP_LOOP_IDLE;
   if (in->released & CP_BTN_BACK) return CP_LOOP_EXIT;
-  if (in->released & CP_BTN_UP) { g_amtIdx = (g_amtIdx + 3) % 4; return CP_LOOP_RENDER; }
-  if (in->released & CP_BTN_DOWN) { g_amtIdx = (g_amtIdx + 1) % 4; return CP_LOOP_RENDER; }
+  if (in->released & CP_BTN_UP) {
+    g_amtIdx = (g_amtIdx + 3) % 4;
+    return CP_LOOP_RENDER;
+  }
+  if (in->released & CP_BTN_DOWN) {
+    g_amtIdx = (g_amtIdx + 1) % 4;
+    return CP_LOOP_RENDER;
+  }
   if (in->released & CP_BTN_CONFIRM) {
     app_message(api, "联网获取汇率…");
     if (fetch(api) != 0) app_message(api, "获取失败，保留旧数据");
@@ -95,8 +101,8 @@ static void on_render(const CpApi* api) {
   for (int i = 0; i < NCUR; ++i) {
     if (g_cny[i] <= 0) continue;
     const long totalCny = g_cny[i] * amt;  // x1000
-    cp_snprintf(buf, sizeof(buf), "%d %s（%s） = %d.%02d 元", amt, kCur[i].name, kCur[i].code,
-                (int)(totalCny / 1000), (int)((totalCny % 1000) / 10));
+    cp_snprintf(buf, sizeof(buf), "%d %s（%s） = %d.%02d 元", amt, kCur[i].name, kCur[i].code, (int)(totalCny / 1000),
+                (int)((totalCny % 1000) / 10));
     api->draw_text(CP_FONT_UI_LARGE, 22, y, buf, 1, CP_TEXT_REGULAR);
     y += api->line_height(CP_FONT_UI_LARGE) + 8;
   }
