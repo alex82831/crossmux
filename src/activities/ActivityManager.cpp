@@ -24,6 +24,11 @@
 #ifdef ENABLE_CHINESE_VERSION
 #include "apps/weread/WeReadActivity.h"
 #endif
+#ifdef ENABLE_CHINESE_VERSION
+#include "apps/poem/PoemActivity.h"
+#include "apps/rss/RssFeedListActivity.h"
+#include "apps/weather/WeatherActivity.h"
+#endif
 #include "apps/gomoku/GomokuMenuActivity.h"
 #include "apps/minesweeper/MinesweeperMenuActivity.h"
 #include "apps/pixel-switch/PixelSwitchActivity.h"
@@ -485,6 +490,12 @@ void ActivityManager::goToChineseChess() { replaceActivityWith<ChineseChessMenuA
 
 #ifdef ENABLE_CHINESE_VERSION
 void ActivityManager::goToWeRead() { replaceActivityWith<WeReadActivity>(); }
+#endif
+
+#ifdef ENABLE_CHINESE_VERSION
+void ActivityManager::goToWeather() { replaceActivityWith<WeatherActivity>(); }
+void ActivityManager::goToPoem() { replaceActivityWith<PoemActivity>(); }
+void ActivityManager::goToRss() { replaceActivityWith<RssFeedListActivity>(); }
 #endif
 
 void ActivityManager::pushActivity(std::unique_ptr<Activity>&& activity) {

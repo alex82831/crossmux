@@ -36,7 +36,10 @@ enum class AppId : uint8_t {
   OpdsBrowser = 14,
   Calculator = 15,
   Woodfish = 16,
-  Count = 17,
+  Weather = 17,
+  Poem = 18,
+  Rss = 19,
+  Count = 20,
 };
 
 struct AppEntry {
@@ -53,6 +56,11 @@ constexpr AppEntry kAppEntries[] = {
     {AppId::WeRead, StrId::STR_WEREAD_TITLE, UIIcon::WeRead, &ActivityManager::goToWeRead},
 #endif
     {AppId::AirPage, StrId::STR_AIRPAGE_TITLE, UIIcon::AirPage, &ActivityManager::goToAirPage},
+#ifdef ENABLE_CHINESE_VERSION
+    {AppId::Rss, StrId::STR_RSS_TITLE, UIIcon::Rss, &ActivityManager::goToRss},
+    {AppId::Weather, StrId::STR_WEATHER_TITLE, UIIcon::Weather, &ActivityManager::goToWeather},
+    {AppId::Poem, StrId::STR_POEM_TITLE, UIIcon::Poem, &ActivityManager::goToPoem},
+#endif
     {AppId::ReadingStats, StrId::STR_READING_STATS, UIIcon::ReadingStats, &ActivityManager::goToReadingStatsMenu},
     {AppId::Sudoku, StrId::STR_SUDOKU_TITLE, UIIcon::Sudoku, &ActivityManager::goToSudoku},
     {AppId::Gomoku, StrId::STR_GOMOKU_TITLE, UIIcon::Gomoku, &ActivityManager::goToGomoku},
@@ -129,6 +137,9 @@ static_assert(static_cast<uint8_t>(AppId::PixelSwitch) == CrossPointSettings::PI
               "the Pixel Switch app ID must remain stable");
 static_assert(static_cast<uint8_t>(AppId::Calculator) == 15, "the Calculator app ID must remain stable");
 static_assert(static_cast<uint8_t>(AppId::Woodfish) == 16, "the Woodfish app ID must remain stable");
+static_assert(static_cast<uint8_t>(AppId::Weather) == 17 && static_cast<uint8_t>(AppId::Poem) == 18 &&
+                  static_cast<uint8_t>(AppId::Rss) == 19,
+              "the CN network app IDs must remain stable");
 static_assert(appBit(AppId::Woodfish) == (uint32_t{1} << 16), "Woodfish visibility must use the first widened bit");
 static_assert(appIdsAreUnique(), "stable app IDs must not be reused");
 static_assert(CrossPointSettings::DEFAULT_HIDDEN_APPS_MASK ==

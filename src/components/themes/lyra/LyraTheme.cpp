@@ -27,6 +27,11 @@
 #ifdef ENABLE_CHINESE_VERSION
 #include "components/icons/weread.h"
 #endif
+#ifdef ENABLE_CHINESE_VERSION
+#include "components/icons/poem.h"
+#include "components/icons/rss.h"
+#include "components/icons/weather.h"
+#endif
 #include "components/icons/cover.h"
 #include "components/icons/file24.h"
 #include "components/icons/folder.h"
@@ -135,6 +140,14 @@ const uint8_t* LyraTheme::iconForName(UIIcon icon, int size) {
         return CalculatorIcon;
       case UIIcon::Woodfish:
         return WoodfishIcon;
+#ifdef ENABLE_CHINESE_VERSION
+      case UIIcon::Weather:
+        return WeatherIcon;
+      case UIIcon::Poem:
+        return PoemIcon;
+      case UIIcon::Rss:
+        return RssIcon;
+#endif
       default:
         return nullptr;
     }

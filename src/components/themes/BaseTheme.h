@@ -168,6 +168,11 @@ enum UIIcon {
   Achievements,
   Calculator,
   Woodfish,
+#ifdef ENABLE_CHINESE_VERSION
+  Weather,
+  Poem,
+  Rss,
+#endif
 };
 
 // Default theme implementation (Classic Theme)

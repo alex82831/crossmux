@@ -135,6 +135,11 @@ class ActivityManager {
 #ifdef ENABLE_CHINESE_VERSION
   void goToWeRead();
 #endif
+#ifdef ENABLE_CHINESE_VERSION
+  void goToWeather();
+  void goToPoem();
+  void goToRss();
+#endif
   void goHome(HomeMenuItem initialMenuItem = HomeMenuItem::NONE);
   MainTabFocus getMainTabFocus() const { return mainTabFocus; }
 
