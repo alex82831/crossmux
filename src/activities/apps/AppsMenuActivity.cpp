@@ -44,7 +44,8 @@ enum class AppId : uint8_t {
   Pomodoro = 22,
   Exchange = 23,
   Vocab = 24,
-  Count = 25,
+  AppManager = 25,
+  Count = 26,
 };
 
 struct AppEntry {
@@ -56,6 +57,7 @@ struct AppEntry {
 
 constexpr AppEntry kAppEntries[] = {
     {AppId::FileTransfer, StrId::STR_FILE_TRANSFER, UIIcon::Transfer, &ActivityManager::goToFileTransfer},
+    {AppId::AppManager, StrId::STR_APPMGR_TITLE, UIIcon::AppStore, &ActivityManager::goToAppManager},
     {AppId::OpdsBrowser, StrId::STR_OPDS_BROWSER, UIIcon::Opds, &ActivityManager::goToBrowser},
 #ifdef ENABLE_CHINESE_VERSION
     {AppId::WeRead, StrId::STR_WEREAD_TITLE, UIIcon::WeRead, &ActivityManager::goToWeRead},
@@ -134,6 +136,7 @@ constexpr bool usesSideScrollBar(const CrossPointSettings::UI_THEME theme) {
       return true;
     case CrossPointSettings::CLASSIC:
     case CrossPointSettings::ROUNDEDRAFF:
+    case CrossPointSettings::RETRO:
       return false;
   }
   return false;
@@ -154,6 +157,7 @@ static_assert(static_cast<uint8_t>(AppId::Sanguo) == 20 && static_cast<uint8_t>(
                   static_cast<uint8_t>(AppId::Pomodoro) == 22 && static_cast<uint8_t>(AppId::Exchange) == 23 &&
                   static_cast<uint8_t>(AppId::Vocab) == 24,
               "the second CN app batch IDs must remain stable");
+static_assert(static_cast<uint8_t>(AppId::AppManager) == 25, "the App Manager ID must remain stable");
 static_assert(appBit(AppId::Woodfish) == (uint32_t{1} << 16), "Woodfish visibility must use the first widened bit");
 static_assert(appIdsAreUnique(), "stable app IDs must not be reused");
 static_assert(CrossPointSettings::DEFAULT_HIDDEN_APPS_MASK ==

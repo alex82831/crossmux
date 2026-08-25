@@ -168,6 +168,7 @@ enum UIIcon {
   Achievements,
   Calculator,
   Woodfish,
+  AppStore,
 #ifdef ENABLE_CHINESE_VERSION
   Weather,
   Poem,

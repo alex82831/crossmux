@@ -20,7 +20,9 @@ class UITheme {
 
   const ThemeMetrics& getMetrics() const;
   const BaseTheme& getTheme() const { return *currentTheme; }
-  bool usesClassicTabs() const { return currentType == CrossPointSettings::UI_THEME::CLASSIC; }
+  bool usesClassicTabs() const {
+    return currentType == CrossPointSettings::UI_THEME::CLASSIC || currentType == CrossPointSettings::UI_THEME::RETRO;
+  }
   bool hasMainTabs() const { return currentType == CrossPointSettings::UI_THEME::INX; }
   bool showSelectionCursor() const;
   Rect getScreenSafeArea(const GfxRenderer& renderer, bool hasFrontButtonHints = false,

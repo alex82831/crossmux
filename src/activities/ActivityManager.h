@@ -146,6 +146,10 @@ class ActivityManager {
   void goToSanguo();
   void startSanguoGame(uint8_t faction, bool newGame);
 #endif
+  void goToAppManager();
+#ifndef SIMULATOR
+  void startDynApp(const std::string& eappPath, const std::string& slug);
+#endif
   void goHome(HomeMenuItem initialMenuItem = HomeMenuItem::NONE);
   MainTabFocus getMainTabFocus() const { return mainTabFocus; }
 

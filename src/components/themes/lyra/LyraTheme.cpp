@@ -37,6 +37,7 @@
 #include "components/icons/vocab.h"
 #include "components/icons/weather.h"
 #endif
+#include "components/icons/appstore.h"
 #include "components/icons/cover.h"
 #include "components/icons/file24.h"
 #include "components/icons/folder.h"
@@ -145,6 +146,8 @@ const uint8_t* LyraTheme::iconForName(UIIcon icon, int size) {
         return CalculatorIcon;
       case UIIcon::Woodfish:
         return WoodfishIcon;
+      case UIIcon::AppStore:
+        return AppStoreIcon;
 #ifdef ENABLE_CHINESE_VERSION
       case UIIcon::Weather:
         return WeatherIcon;

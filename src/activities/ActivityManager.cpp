@@ -35,6 +35,10 @@
 #include "apps/vocab/VocabActivity.h"
 #include "apps/weather/WeatherActivity.h"
 #endif
+#include "apps/appmgr/AppManagerActivity.h"
+#ifndef SIMULATOR
+#include "apps/appmgr/DynAppActivity.h"
+#endif
 #include "apps/gomoku/GomokuMenuActivity.h"
 #include "apps/minesweeper/MinesweeperMenuActivity.h"
 #include "apps/pixel-switch/PixelSwitchActivity.h"
@@ -509,6 +513,14 @@ void ActivityManager::goToVocab() { replaceActivityWith<VocabActivity>(); }
 void ActivityManager::goToSanguo() { replaceActivityWith<SanguoMenuActivity>(); }
 void ActivityManager::startSanguoGame(uint8_t faction, bool newGame) {
   replaceActivityWith<SanguoGameActivity>(faction, newGame);
+}
+#endif
+
+void ActivityManager::goToAppManager() { replaceActivityWith<AppManagerActivity>(); }
+
+#ifndef SIMULATOR
+void ActivityManager::startDynApp(const std::string& eappPath, const std::string& slug) {
+  replaceActivityWith<DynAppActivity>(eappPath, slug);
 }
 #endif
 
