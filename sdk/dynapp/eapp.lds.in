@@ -1,0 +1,48 @@
+/* Linker script template for CrossPoint dynamic apps (.eapp).
+ *
+ * The ESP32-C3 fetches instructions only through its I-bus window and does
+ * byte data access only through its D-bus window, SOC_I_D_OFFSET (0x700000)
+ * apart. The firmware loader places the whole image in ONE heap block and
+ * resolves every link-time address A as `blockD + A`. For PC-relative
+ * (auipc) data access to keep working, the link-time text->data delta must
+ * equal the runtime delta, which pins the layout:
+ *
+ *   - text at vaddr 0x700000 (phys offset 0 in the block)
+ *   - everything byte-accessed at vaddr == its phys offset, i.e. starting at
+ *     DATA_VBASE = align16(text size) — patched in by build-eapp.sh (two-pass
+ *     link; pass 1 uses a placeholder).
+ *
+ * Dynamic-linking metadata (.dynsym/.rela.dyn/...) sits at the front of the
+ * data region: the loader reads relocations via section headers, and keeping
+ * the sections mapped costs well under 1KB for a typical app while keeping
+ * the ELF perfectly standard for tooling.
+ */
+
+ENTRY(cp_app_entry)
+
+SECTIONS
+{
+  . = @DATA_VBASE@;
+
+  /* Linker-synthesized dynamic sections must each stay their own output
+   * section, or ld silently drops the dynamic relocation table. */
+  .hash : { *(.hash) }
+  .gnu.hash : { *(.gnu.hash) }
+  .dynsym : { *(.dynsym) }
+  .dynstr : { *(.dynstr) }
+  .rela.dyn : { *(.rela.dyn) *(.rela.*) }
+  .rodata : { *(.rodata .rodata.* .srodata .srodata.*) }
+  .data.rel.ro : { *(.data.rel.ro .data.rel.ro.*) }
+  .dynamic : { *(.dynamic) }
+  .got : { *(.got .got.plt) }
+  .data : { *(.data .data.* .sdata .sdata.*) }
+  .bss (NOLOAD) : { *(.bss .bss.* .sbss .sbss.* COMMON) }
+
+  . = 0x700000;
+  .text : { *(.text .text.*) }
+
+  /DISCARD/ : {
+    *(.comment) *(.riscv.attributes) *(.note.*) *(.eh_frame*)
+    *(.interp) *(.gnu.version*)
+  }
+}

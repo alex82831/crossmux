@@ -1,0 +1,20 @@
+{
+  "apps": [
+    {
+      "slug": "sysmon",
+      "name": "系统监视器",
+      "version": "1.0.0",
+      "bytes": 4028,
+      "note": "电量/内存/运行时间实时仪表",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/sysmon.eapp"
+    },
+    {
+      "slug": "life",
+      "name": "生命游戏",
+      "version": "1.0.0",
+      "bytes": 4220,
+      "note": "康威生命游戏·可点击编辑",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/life.eapp"
+    }
+  ]
+}

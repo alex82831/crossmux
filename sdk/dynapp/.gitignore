@@ -1,0 +1,2 @@
+# Local build output; the distributed .eapp binaries live in /store instead.
+out/
