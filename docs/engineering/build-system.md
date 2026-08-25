@@ -97,6 +97,35 @@ These flags in `platformio.ini` fundamentally affect firmware behavior:
 -DDESTRUCTOR_CLOSES_FILE=1           // FsFile destructor auto-closes (SdFat)
 ```
 
+**USB serial implications** (why the device stays flashable):
+
+The Xteink C3 boards expose no UART header, so the USB Serial/JTAG peripheral is
+the only serial transport. `src/main.cpp` carries an `#error` guard on both USB
+flags for non-simulator builds — a release env that loses them fails the build
+instead of shipping a device with no log output and no CDC port.
+
+- `Serial` is `HWCDC` (USB Serial/JTAG), not `HardwareSerial` — see the
+  `ARDUINO_USB_CDC_ON_BOOT` branch in `lib/Logging/Logging.h:34`.
+- `setup()` waits 250 ms before `Serial.begin(115200)` so the peripheral powers
+  on and the host finishes enumeration; cold boot otherwise needs a replug.
+- ESP-IDF's own console is UART0 primary with USB Serial/JTAG secondary
+  (`CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG=y`), so bootloader and panic
+  output reach USB too.
+- `ENABLE_SERIAL_LOG` gates only the `LOG_*` macros, not the CDC port itself.
+  `slim` drops it deliberately; the port still enumerates.
+- **CPU scaling does not kill USB.** `HalPowerManager` drops the C3 to
+  `LOW_POWER_FREQ` (10 MHz, XTAL/4) after 3 s idle, and on the C3 the USB PHY's
+  48 MHz clock comes from the BBPLL (`USB_SERIAL_JTAG_LL_PHY_DEPENDS_ON_BBPLL`).
+  It survives for two independent reasons: Arduino's `setCpuFrequencyMhz()` goes
+  through `rtc_clk_cpu_freq_set_config_fast()`, whose XTAL branch never calls
+  `rtc_clk_bbpll_disable()`; and IDF's `usb_serial_jtag_conn_status_init` holds a
+  BBPLL consumer reference while a host is sending SOF packets, which the full
+  `rtc_clk_cpu_freq_set_config()` path checks before powering the PLL down.
+- Nothing in this firmware burns eFuses. `src/platform/skip_efuse_blk_check.c`
+  only makes a read-side block-revision check return `ESP_OK`; it cannot disable
+  USB or download mode. Secure boot and flash encryption are both off, and
+  `CONFIG_SECURE_ROM_DL_MODE_ENABLED=y` keeps ROM download mode available.
+
 **DESTRUCTOR_CLOSES_FILE implications**:
 - SdFat's `FsBaseFile` destructor calls `close()` automatically when the object goes out of scope
 - **Do NOT add explicit `file.close()` calls** for local `FsFile` variables — the destructor handles it

@@ -42,6 +42,19 @@
 #include "util/ButtonNavigator.h"
 #include "util/ScreenshotUtil.h"
 
+// Every supported board exposes USB as its only serial transport — the Xteink
+// C3 units have no UART header at all. Losing either flag silently produces a
+// firmware with no log output and no CDC port for esptool's reset sequence,
+// which is only discoverable on hardware. Fail the build instead.
+#if !defined(SIMULATOR)
+#if !defined(ARDUINO_USB_MODE) || ARDUINO_USB_MODE != 1
+#error "ARDUINO_USB_MODE=1 is required: Serial must be hardware CDC (USB Serial/JTAG)."
+#endif
+#if !defined(ARDUINO_USB_CDC_ON_BOOT) || ARDUINO_USB_CDC_ON_BOOT != 1
+#error "ARDUINO_USB_CDC_ON_BOOT=1 is required so Serial is the USB CDC port from boot."
+#endif
+#endif
+
 GfxRenderer renderer(display);
 MappedInputManager mappedInputManager(gpio, renderer);
 ActivityManager activityManager(renderer, mappedInputManager);
