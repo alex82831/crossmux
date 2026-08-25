@@ -15,8 +15,7 @@ constexpr int kShadow = 3;  // hard drop-shadow offset for beveled chrome
 
 // ---- shared brushes -----------------------------------------------------
 
-void RetroTheme::drawStripes(const GfxRenderer& renderer, const int x, const int y, const int width,
-                             const int height) {
+void RetroTheme::drawStripes(const GfxRenderer& renderer, const int x, const int y, const int width, const int height) {
   if (width <= 0 || height <= 0) return;
   // Six System-7 pinstripes fit a 48px bar; scale by drawing every 4px.
   for (int sy = y + 2; sy < y + height - 2; sy += 4) {
@@ -156,8 +155,7 @@ void RetroTheme::drawButtonMenu(GfxRenderer& renderer, Rect rect, const int butt
     drawBevelBox(renderer, tile, selected);
     const std::string label = buttonLabel(i);
     const int inset = selected ? kShadow : 0;
-    const int textX =
-        tile.x + inset + (tile.width - kShadow - renderer.getTextWidth(UI_10_FONT_ID, label.c_str())) / 2;
+    const int textX = tile.x + inset + (tile.width - kShadow - renderer.getTextWidth(UI_10_FONT_ID, label.c_str())) / 2;
     const int textY = tileY + inset + (m.menuRowHeight - kShadow - renderer.getLineHeight(UI_10_FONT_ID)) / 2;
     renderer.drawText(UI_10_FONT_ID, textX, textY, label.c_str(), !selected);
   }

@@ -143,8 +143,7 @@ void DynAppActivity::render(RenderLock&&) {
     const Rect fullScreen{0, 0, sw, sh};
     UITheme::drawCenteredText(renderer, fullScreen, UI_12_FONT_ID, sh / 2 - renderer.getLineHeight(UI_12_FONT_ID),
                               tr(STR_DYNAPP_LOAD_FAILED), true, EpdFontFamily::BOLD);
-    UITheme::drawCenteredText(renderer, fullScreen, UI_10_FONT_ID, sh / 2 + 8,
-                              DynAppLoader::errorName(loadError_));
+    UITheme::drawCenteredText(renderer, fullScreen, UI_10_FONT_ID, sh / 2 + 8, DynAppLoader::errorName(loadError_));
     renderer.displayBuffer();
     return;
   }

@@ -32,9 +32,7 @@ bool validSlug(const char* slug) {
   return true;
 }
 
-void copyStr(char* dst, const size_t cap, const char* src) {
-  snprintf(dst, cap, "%s", src != nullptr ? src : "");
-}
+void copyStr(char* dst, const size_t cap, const char* src) { snprintf(dst, cap, "%s", src != nullptr ? src : ""); }
 
 uint32_t dirBytes(const char* path) {
   uint32_t total = 0;

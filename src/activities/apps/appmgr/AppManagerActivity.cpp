@@ -24,8 +24,7 @@ void formatKb(char* out, const size_t cap, const uint32_t bytes) {
   if (bytes < 1024) {
     snprintf(out, cap, "%u B", static_cast<unsigned>(bytes));
   } else {
-    snprintf(out, cap, "%u.%u KB", static_cast<unsigned>(bytes / 1024),
-             static_cast<unsigned>((bytes % 1024) / 103));
+    snprintf(out, cap, "%u.%u KB", static_cast<unsigned>(bytes / 1024), static_cast<unsigned>((bytes % 1024) / 103));
   }
 }
 
@@ -131,7 +130,7 @@ void AppManagerActivity::rebuildCatalogRows() {
     const char* installedVer = dynappreg::installedVersion(installed_, installedCount_, catalog_[i].slug);
     char size[24];
     formatKb(size, sizeof(size), catalog_[i].bytes);
-    const char* status = installedVer == nullptr           ? tr(STR_APPMGR_NOT_INSTALLED)
+    const char* status = installedVer == nullptr                          ? tr(STR_APPMGR_NOT_INSTALLED)
                          : strcmp(installedVer, catalog_[i].version) == 0 ? tr(STR_APPMGR_UP_TO_DATE)
                                                                           : tr(STR_APPMGR_UPDATABLE);
     if (catalog_[i].note[0] != '\0') {

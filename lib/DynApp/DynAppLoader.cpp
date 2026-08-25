@@ -190,8 +190,7 @@ DynAppLoader::Error DynAppLoader::load(const std::string& eappPath) {
   for (int i = 0; i < ehdr.phnum; ++i) {
     const Elf32Phdr& p = phdrs[i];
     if (p.type != kPtLoad || p.filesz == 0) continue;
-    if (!file.seekSet(p.offset) ||
-        file.read(blockD_ + vaddrToPhys(p.vaddr), p.filesz) != static_cast<int>(p.filesz)) {
+    if (!file.seekSet(p.offset) || file.read(blockD_ + vaddrToPhys(p.vaddr), p.filesz) != static_cast<int>(p.filesz)) {
       unload();
       return Error::BadElf;
     }

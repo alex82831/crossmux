@@ -38,8 +38,8 @@ struct CatalogEntry {
 // ---- Installed apps ----------------------------------------------------
 int scanInstalled(InstalledApp* out, int cap);
 std::string eappPath(const char* slug);
-bool uninstall(const char* slug);   // removes image, version tag and data
-bool clearData(const char* slug);   // removes only /apps/data/<slug>/
+bool uninstall(const char* slug);  // removes image, version tag and data
+bool clearData(const char* slug);  // removes only /apps/data/<slug>/
 const char* installedVersion(const InstalledApp* apps, int count, const char* slug);
 
 // ---- Online catalog ----------------------------------------------------

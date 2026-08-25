@@ -55,38 +55,25 @@ struct AppEntry {
   void (ActivityManager::*open)();
 };
 
+// Firmware now ships only the App Manager plus the pieces that are firmware
+// infrastructure and cannot be standalone installable apps: File Transfer
+// (the app-install upload channel), OPDS/WeRead (library + reader
+// integration), AirPage/Pixel Switch (MQTT), Reading Stats (reader DB), and
+// Standby (system sleep screen). Every other former app is now an installable
+// .eapp (see sdk/dynapp + the online catalog); its stable AppId is retained in
+// the enum for hiddenAppsMask compatibility but no longer has a menu entry.
 constexpr AppEntry kAppEntries[] = {
-    {AppId::FileTransfer, StrId::STR_FILE_TRANSFER, UIIcon::Transfer, &ActivityManager::goToFileTransfer},
+#ifndef SIMULATOR
     {AppId::AppManager, StrId::STR_APPMGR_TITLE, UIIcon::AppStore, &ActivityManager::goToAppManager},
+#endif
+    {AppId::FileTransfer, StrId::STR_FILE_TRANSFER, UIIcon::Transfer, &ActivityManager::goToFileTransfer},
     {AppId::OpdsBrowser, StrId::STR_OPDS_BROWSER, UIIcon::Opds, &ActivityManager::goToBrowser},
 #ifdef ENABLE_CHINESE_VERSION
     {AppId::WeRead, StrId::STR_WEREAD_TITLE, UIIcon::WeRead, &ActivityManager::goToWeRead},
 #endif
     {AppId::AirPage, StrId::STR_AIRPAGE_TITLE, UIIcon::AirPage, &ActivityManager::goToAirPage},
-#ifdef ENABLE_CHINESE_VERSION
-    {AppId::Rss, StrId::STR_RSS_TITLE, UIIcon::Rss, &ActivityManager::goToRss},
-    {AppId::Weather, StrId::STR_WEATHER_TITLE, UIIcon::Weather, &ActivityManager::goToWeather},
-    {AppId::Poem, StrId::STR_POEM_TITLE, UIIcon::Poem, &ActivityManager::goToPoem},
-    {AppId::Sanguo, StrId::STR_SANGUO_TITLE, UIIcon::Sanguo, &ActivityManager::goToSanguo},
-    {AppId::Klotski, StrId::STR_KLOTSKI_TITLE, UIIcon::Klotski, &ActivityManager::goToKlotski},
-    {AppId::Pomodoro, StrId::STR_POMO_TITLE, UIIcon::Pomodoro, &ActivityManager::goToPomodoro},
-    {AppId::Exchange, StrId::STR_FX_TITLE, UIIcon::Exchange, &ActivityManager::goToExchangeRate},
-    {AppId::Vocab, StrId::STR_VOCAB_TITLE, UIIcon::Vocab, &ActivityManager::goToVocab},
-#endif
-    {AppId::ReadingStats, StrId::STR_READING_STATS, UIIcon::ReadingStats, &ActivityManager::goToReadingStatsMenu},
-    {AppId::Sudoku, StrId::STR_SUDOKU_TITLE, UIIcon::Sudoku, &ActivityManager::goToSudoku},
-    {AppId::Gomoku, StrId::STR_GOMOKU_TITLE, UIIcon::Gomoku, &ActivityManager::goToGomoku},
-    {AppId::Sokoban, StrId::STR_SOKOBAN_TITLE, UIIcon::Sokoban, &ActivityManager::goToSokoban},
-#ifdef ENABLE_CHINESE_VERSION
-    {AppId::ChineseChess, StrId::STR_CHINESE_CHESS_TITLE, UIIcon::ChineseChess, &ActivityManager::goToChineseChess},
-#endif
-    {AppId::Minesweeper, StrId::STR_MINESWEEPER_TITLE, UIIcon::Minesweeper, &ActivityManager::goToMinesweeper},
-    {AppId::Game2048, StrId::STR_2048_TITLE, UIIcon::Game2048, &ActivityManager::goToGame2048},
-    {AppId::UglyAvatar, StrId::STR_UGLY_AVATAR, UIIcon::Avatar, &ActivityManager::goToUglyAvatar},
-    {AppId::Buddy, StrId::STR_BUDDY_TITLE, UIIcon::Buddy, &ActivityManager::goToBuddy},
     {AppId::PixelSwitch, StrId::STR_PIXEL_SWITCH_TITLE, UIIcon::PixelSwitch, &ActivityManager::goToPixelSwitch},
-    {AppId::Calculator, StrId::STR_CALCULATOR_TITLE, UIIcon::Calculator, &ActivityManager::goToCalculator},
-    {AppId::Woodfish, StrId::STR_WOODFISH_TITLE, UIIcon::Woodfish, &ActivityManager::goToWoodfish},
+    {AppId::ReadingStats, StrId::STR_READING_STATS, UIIcon::ReadingStats, &ActivityManager::goToReadingStatsMenu},
     {AppId::Standby, StrId::STR_STANDBY_TITLE, UIIcon::Standby, &ActivityManager::goToStandby},
 };
 
@@ -166,7 +153,9 @@ static_assert(CrossPointSettings::DEFAULT_HIDDEN_APPS_MASK ==
               "the default mask must hide Chinese chess, Minesweeper, 2048, Standby, Buddy, and Pixel Switch");
 static_assert(visibleAppCount(0) == kAppCount, "a zero mask must show every compiled app");
 static_assert(visibleAppCount(UINT32_MAX) == 0, "a full mask must hide every compiled app");
-static_assert(visibleAppCount(appBit(AppId::Woodfish)) == kAppCount - 1, "the widened mask must hide Woodfish");
+static_assert(appBit(AppId::Woodfish) == (uint32_t{1} << 16), "widened-bit AppIds must keep their >15 positions");
+static_assert(visibleAppCount(appBit(AppId::Standby)) == kAppCount - 1,
+              "hiding a compiled app drops one from the count");
 static_assert(visibleAppCount(effectiveHiddenMask(0, false)) == kAppCount - 1,
               "OPDS must be hidden when no server is configured");
 static_assert(appIndexForVisibleIndex(appBit(kAppEntries[1].id), 1) == 2,

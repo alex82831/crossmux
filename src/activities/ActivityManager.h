@@ -103,7 +103,6 @@ class ActivityManager {
   // goTo... functions are convenient wrapper for replaceActivity()
   void goToFileTransfer();
   void goToSettings();
-  void goToUglyAvatar();
   void goToReadingStatsMenu();
   void goToReadingStats();
   void goToInxRecent();
@@ -118,36 +117,14 @@ class ActivityManager {
   void goToFullScreenMessage(std::string message, EpdFontFamily::Style style = EpdFontFamily::REGULAR);
   void goToCrashReport();
   void goToApps();
-  void goToSudoku();
-  void goToSokoban();
-  void goToGomoku();
-  void goToMinesweeper();
   void goToPixelSwitch();
-  void goToCalculator();
-  void goToWoodfish();
   void goToAirPage();
-  void goToBuddy();
   void goToStandby();
-  void goToGame2048();
-#ifdef ENABLE_CHINESE_VERSION
-  void goToChineseChess();
-#endif
 #ifdef ENABLE_CHINESE_VERSION
   void goToWeRead();
 #endif
-#ifdef ENABLE_CHINESE_VERSION
-  void goToWeather();
-  void goToPoem();
-  void goToRss();
-  void goToKlotski();
-  void goToPomodoro();
-  void goToExchangeRate();
-  void goToVocab();
-  void goToSanguo();
-  void startSanguoGame(uint8_t faction, bool newGame);
-#endif
-  void goToAppManager();
 #ifndef SIMULATOR
+  void goToAppManager();
   void startDynApp(const std::string& eappPath, const std::string& slug);
 #endif
   void goHome(HomeMenuItem initialMenuItem = HomeMenuItem::NONE);

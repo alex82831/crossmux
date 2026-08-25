@@ -17,14 +17,14 @@ class DynAppLoader {
  public:
   enum class Error : uint8_t {
     None = 0,
-    FileOpen,      // .eapp missing or unreadable
-    BadElf,        // not a little-endian ELF32 RISC-V DYN object
-    BadLayout,     // segments outside the SDK's link layout
-    TooLarge,      // image exceeds kMaxImageBytes
-    OutOfMemory,   // executable heap block unavailable
-    BadReloc,      // unsupported relocation type
-    BadEntry,      // entry point missing/outside text, or CpApp invalid
-    AbiMismatch,   // app built for an incompatible CP_ABI_VERSION
+    FileOpen,     // .eapp missing or unreadable
+    BadElf,       // not a little-endian ELF32 RISC-V DYN object
+    BadLayout,    // segments outside the SDK's link layout
+    TooLarge,     // image exceeds kMaxImageBytes
+    OutOfMemory,  // executable heap block unavailable
+    BadReloc,     // unsupported relocation type
+    BadEntry,     // entry point missing/outside text, or CpApp invalid
+    AbiMismatch,  // app built for an incompatible CP_ABI_VERSION
   };
 
   // Refuse images that would gouge the ~380KB heap. Covers text+rodata+data
