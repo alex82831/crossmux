@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "activities/Activity.h"
+#include "activities/apps/netkit/AppAbout.h"
 
 // 番茄钟 (Pomodoro focus timer): work/short-break cycles with a long break
 // after four rounds, three duration presets, minute-granularity e-ink
@@ -50,4 +51,6 @@ class PomodoroActivity final : public Activity {
   uint16_t todayCount_ = 0;
   uint32_t totalCount_ = 0;
   uint32_t statsYmd_ = 0;
+
+  appabout::AboutGate aboutGate_;
 };

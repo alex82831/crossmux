@@ -47,6 +47,11 @@ void ExchangeRateActivity::onExit() {
 }
 
 void ExchangeRateActivity::loop() {
+  bool aboutRepaint = false;
+  if (aboutGate_.handle(mappedInput, aboutRepaint)) {
+    if (aboutRepaint) requestUpdate();
+    return;
+  }
   if (mappedInput.wasReleased(MappedInputManager::Button::Back)) {
     activityManager.goToApps();
     return;
@@ -171,22 +176,22 @@ void ExchangeRateActivity::render(RenderLock&&) {
       renderer.drawText(UI_12_FONT_ID, contentX, y, buf);
       const double cny = static_cast<double>(rates_[i]) * amount;
       snprintf(buf, sizeof(buf), (cny >= 1000.0) ? "%.0f %s" : "%.2f %s", cny, tr(STR_FX_CNY));
-      renderer.drawText(UI_12_FONT_ID, contentX + contentW - renderer.getTextWidth(UI_12_FONT_ID, buf), y, buf,
-                        true, EpdFontFamily::BOLD);
+      renderer.drawText(UI_12_FONT_ID, contentX + contentW - renderer.getTextWidth(UI_12_FONT_ID, buf), y, buf, true,
+                        EpdFontFamily::BOLD);
       y += rowH;
     }
     if (fetchedEpoch_ > kMinValidEpoch) {
       time_t t = static_cast<time_t>(fetchedEpoch_);
       struct tm tmLocal;
       localtime_r(&t, &tmLocal);
-      snprintf(buf, sizeof(buf), "%s %02d-%02d %02d:%02d", tr(STR_WEATHER_UPDATED), tmLocal.tm_mon + 1,
-               tmLocal.tm_mday, tmLocal.tm_hour, tmLocal.tm_min);
+      snprintf(buf, sizeof(buf), "%s %02d-%02d %02d:%02d", tr(STR_WEATHER_UPDATED), tmLocal.tm_mon + 1, tmLocal.tm_mday,
+               tmLocal.tm_hour, tmLocal.tm_min);
       UITheme::drawCenteredText(renderer, fullScreen, SMALL_FONT_ID, y + metrics.verticalSpacing, buf);
     }
   }
 
-  const auto labels =
-      mappedInput.mapLabels(tr(STR_BACK), tr(STR_APP_REFRESH), tr(STR_FX_AMOUNT), tr(STR_FX_AMOUNT));
+  const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_APP_REFRESH), tr(STR_FX_AMOUNT), tr(STR_FX_AMOUNT));
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
+  if (aboutGate_.open) appabout::drawOverlay(renderer, tr(STR_FX_TITLE));
   renderer.displayBuffer();
 }

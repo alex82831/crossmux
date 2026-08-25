@@ -4,6 +4,7 @@
 
 #include "KlotskiLayouts.h"
 #include "activities/Activity.h"
+#include "activities/apps/netkit/AppAbout.h"
 
 // 华容道 (Klotski): classic 4x5 sliding-block puzzle, Three-Kingdoms themed.
 // Confirm cycles the selected piece (or tap it), direction keys slide it one
@@ -51,4 +52,5 @@ class KlotskiActivity final : public Activity {
   bool menuOpen_ = false;
   uint8_t menuSelected_ = 0;
   bool won_ = false;
+  bool aboutOpen_ = false;
 };

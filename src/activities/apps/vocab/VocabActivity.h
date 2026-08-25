@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "activities/Activity.h"
+#include "activities/apps/netkit/AppAbout.h"
 
 // 单词卡 (Flashcards): built-in high-frequency CET-4 deck with a three-box
 // Leitner flow — unknown words come back often, mastered ones rarely.
@@ -32,4 +33,6 @@ class VocabActivity final : public Activity {
   bool revealed_ = false;
   uint16_t sessionSeen_ = 0;
   bool dirty_ = false;
+
+  appabout::AboutGate aboutGate_;
 };

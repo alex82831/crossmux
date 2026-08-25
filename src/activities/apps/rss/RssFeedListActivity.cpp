@@ -72,6 +72,11 @@ const char* RssFeedListActivity::headerTitle() const { return tr(STR_RSS_TITLE);
 void RssFeedListActivity::onBackButton() { activityManager.goToApps(); }
 
 bool RssFeedListActivity::handleCustomInput() {
+  bool aboutRepaint = false;
+  if (aboutGate_.handle(mappedInput, aboutRepaint)) {
+    if (aboutRepaint) requestUpdate();
+    return true;
+  }
   if (mappedInput.wasReleased(MappedInputManager::Button::Left) ||
       mappedInput.wasReleased(MappedInputManager::Button::Right)) {
     if (feedCount_ > 0) refreshAll();
@@ -109,6 +114,9 @@ void RssFeedListActivity::doFetchAll() {
 void RssFeedListActivity::drawFooter() {
   const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_SELECT), tr(STR_RSS_FETCH_ALL), tr(STR_RSS_FETCH_ALL));
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
+  // drawFooter runs last in the UiListActivity render sequence, so the About
+  // overlay painted here sits on top of the list.
+  if (aboutGate_.open) appabout::drawOverlay(renderer, tr(STR_RSS_TITLE));
 }
 
 void RssFeedListActivity::activateIndex(const int index) {

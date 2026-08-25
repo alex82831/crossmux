@@ -3,6 +3,7 @@
 #include <string>
 
 #include "activities/Activity.h"
+#include "activities/apps/netkit/AppAbout.h"
 
 // Daily Chinese poem (每日诗词): fetches one classical poem line from the
 // jinrishici open API on demand and keeps a rolling history of the last 20
@@ -42,4 +43,6 @@ class PoemActivity final : public Activity {
   int index_ = 0;  // 0 = newest
   Status status_ = Status::Empty;
   bool fetching_ = false;
+
+  appabout::AboutGate aboutGate_;
 };

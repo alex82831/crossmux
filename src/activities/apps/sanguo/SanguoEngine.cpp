@@ -20,9 +20,7 @@ uint32_t withVariance(const uint32_t value) {
   return value - swing + (esp_random() % (2 * swing + 1));
 }
 
-uint16_t clampTroops(const uint32_t troops) {
-  return troops > kMaxTroops ? kMaxTroops : static_cast<uint16_t>(troops);
-}
+uint16_t clampTroops(const uint32_t troops) { return troops > kMaxTroops ? kMaxTroops : static_cast<uint16_t>(troops); }
 }  // namespace
 
 void RoundLog::add(const char* fmt, ...) {
@@ -123,8 +121,7 @@ uint32_t Engine::attackPowerX100(const uint16_t troops, const int fromCity, cons
 
 uint32_t Engine::defensePowerX100(const int city) const {
   const CityState& c = st.cities[city];
-  const uint32_t base = static_cast<uint32_t>(c.troops) *
-                        (100 + c.walls * 8 + generalBonusX100(city, c.owner));
+  const uint32_t base = static_cast<uint32_t>(c.troops) * (100 + c.walls * 8 + generalBonusX100(city, c.owner));
   return base * 115 / 100;  // defender's ground advantage
 }
 
@@ -312,8 +309,8 @@ void Engine::aiTurn(const uint8_t faction, RoundLog& log, BattleReport* aiBattle
         resolveBattle(bestFrom, bestTarget, sendable, report);
         attackedThisTurn = true;
         if (aiBattleCount < maxAiBattles) aiBattles[aiBattleCount++] = report;
-        log.add("%s%s%s（%s）", kFactionNames[faction], report.captured ? "攻占" : "进攻",
-                kCities[bestTarget].name, report.captured ? "得手" : "被击退");
+        log.add("%s%s%s（%s）", kFactionNames[faction], report.captured ? "攻占" : "进攻", kCities[bestTarget].name,
+                report.captured ? "得手" : "被击退");
         continue;
       }
     }

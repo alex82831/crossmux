@@ -38,9 +38,7 @@ void SanguoGameActivity::onExit() {
   Activity::onExit();
 }
 
-void SanguoGameActivity::setNotice(const char* text) {
-  snprintf(notice_, sizeof(notice_), "%s", text);
-}
+void SanguoGameActivity::setNotice(const char* text) { snprintf(notice_, sizeof(notice_), "%s", text); }
 
 int SanguoGameActivity::adjacentTargets(const int fromCity, uint8_t* out, const int maxOut) const {
   int n = 0;
@@ -291,11 +289,11 @@ void SanguoGameActivity::drawPanelText(const char* title, const char* body) {
   const int titleH = renderer.getLineHeight(UI_12_FONT_ID);
   UITheme::drawCenteredText(renderer, Rect{panel.x, 0, panel.width, sh}, UI_12_FONT_ID,
                             panel.y + metrics.verticalSpacing, title, true, EpdFontFamily::BOLD);
-  UITheme::drawCenteredWrappedText(
-      renderer,
-      Rect{panel.x + 14, panel.y + metrics.verticalSpacing + titleH + 6, panel.width - 28,
-           panel.height - titleH - metrics.verticalSpacing * 2 - 12},
-      UI_10_FONT_ID, body, 12, true, EpdFontFamily::REGULAR, UITheme::TextVerticalAlignment::TOP);
+  UITheme::drawCenteredWrappedText(renderer,
+                                   Rect{panel.x + 14, panel.y + metrics.verticalSpacing + titleH + 6, panel.width - 28,
+                                        panel.height - titleH - metrics.verticalSpacing * 2 - 12},
+                                   UI_10_FONT_ID, body, 12, true, EpdFontFamily::REGULAR,
+                                   UITheme::TextVerticalAlignment::TOP);
 }
 
 void SanguoGameActivity::drawCityInfo() {
@@ -377,10 +375,10 @@ void SanguoGameActivity::render(RenderLock&&) {
   const int sh = renderer.getScreenHeight();
 
   if (view_ == View::ActionMenu) {
-    const GameMenuItem items[7] = {{tr(STR_SANGUO_DEV_FARM), nullptr},   {tr(STR_SANGUO_DEV_MARKET), nullptr},
-                                   {tr(STR_SANGUO_DEV_WALLS), nullptr},  {tr(STR_SANGUO_RECRUIT), nullptr},
-                                   {tr(STR_SANGUO_MARCH), nullptr},      {tr(STR_SANGUO_INSPECT), nullptr},
-                                   {tr(STR_CANCEL), nullptr}};
+    const GameMenuItem items[7] = {
+        {tr(STR_SANGUO_DEV_FARM), nullptr}, {tr(STR_SANGUO_DEV_MARKET), nullptr}, {tr(STR_SANGUO_DEV_WALLS), nullptr},
+        {tr(STR_SANGUO_RECRUIT), nullptr},  {tr(STR_SANGUO_MARCH), nullptr},      {tr(STR_SANGUO_INSPECT), nullptr},
+        {tr(STR_CANCEL), nullptr}};
     const Rect panel = gameMenuPanelRect(sw, sh, 300, metrics.menuRowHeight, metrics.menuRowHeight, 7);
     gameDrawMenu(renderer, panel, metrics.menuRowHeight, metrics.menuRowHeight, kCities[cursor_].name, items, 7,
                  menuSel_);
@@ -414,12 +412,12 @@ void SanguoGameActivity::render(RenderLock&&) {
     drawCityInfo();
   } else if (view_ == View::BattleReport) {
     char* body = panelBody_;
-    int pos = snprintf(body, sizeof(panelBody_), "%s %s → %s\n%s %u（%s %u）\n%s %u（%s %u）\n\n%s",
-                       kFactionNames[battle_.attackerFaction], kCities[battle_.fromCity].name,
-                       kCities[battle_.targetCity].name, tr(STR_SANGUO_ATK_SENT), battle_.attackerSent,
-                       tr(STR_SANGUO_LOST), battle_.attackerLost, tr(STR_SANGUO_DEF_HAD), battle_.defenderHad,
-                       tr(STR_SANGUO_LOST), battle_.defenderLost,
-                       battle_.captured ? tr(STR_SANGUO_CITY_TAKEN) : tr(STR_SANGUO_REPELLED));
+    int pos =
+        snprintf(body, sizeof(panelBody_), "%s %s → %s\n%s %u（%s %u）\n%s %u（%s %u）\n\n%s",
+                 kFactionNames[battle_.attackerFaction], kCities[battle_.fromCity].name,
+                 kCities[battle_.targetCity].name, tr(STR_SANGUO_ATK_SENT), battle_.attackerSent, tr(STR_SANGUO_LOST),
+                 battle_.attackerLost, tr(STR_SANGUO_DEF_HAD), battle_.defenderHad, tr(STR_SANGUO_LOST),
+                 battle_.defenderLost, battle_.captured ? tr(STR_SANGUO_CITY_TAKEN) : tr(STR_SANGUO_REPELLED));
     if (battle_.joinedGeneral >= 0 && pos < static_cast<int>(sizeof(panelBody_)) - 48) {
       snprintf(body + pos, sizeof(panelBody_) - pos, "\n%s%s", kGenerals[battle_.joinedGeneral].name,
                tr(STR_SANGUO_JOINED));
@@ -441,8 +439,8 @@ void SanguoGameActivity::render(RenderLock&&) {
                   outcome_ == 1 ? tr(STR_SANGUO_VICTORY_BODY) : tr(STR_SANGUO_DEFEAT_BODY));
   }
 
-  const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_SELECT), tr(STR_SANGUO_END_TURN),
-                                            tr(STR_SANGUO_END_TURN));
+  const auto labels =
+      mappedInput.mapLabels(tr(STR_BACK), tr(STR_SELECT), tr(STR_SANGUO_END_TURN), tr(STR_SANGUO_END_TURN));
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
   renderer.displayBuffer();
 }

@@ -16,7 +16,7 @@ class SanguoMenuActivity final : public Activity {
   void render(RenderLock&&) override;
 
  private:
-  enum class View : uint8_t { Main, FactionPick, Help };
+  enum class View : uint8_t { Main, FactionPick, Help, About };
 
   int mainItemCount() const;
 

@@ -4,6 +4,7 @@
 #include <string>
 
 #include "activities/Activity.h"
+#include "activities/apps/netkit/AppAbout.h"
 
 // 汇率 (Exchange rates): CNY against eight major currencies from the free
 // open.er-api.com feed, with 1/10/100/1000 amount presets and an SD cache so
@@ -36,4 +37,6 @@ class ExchangeRateActivity final : public Activity {
   uint8_t amountIndex_ = 0;
   Status status_ = Status::Empty;
   bool fetching_ = false;
+
+  appabout::AboutGate aboutGate_;
 };

@@ -40,6 +40,11 @@ void WeatherActivity::onExit() {
 }
 
 void WeatherActivity::loop() {
+  bool aboutRepaint = false;
+  if (aboutGate_.handle(mappedInput, aboutRepaint)) {
+    if (aboutRepaint) requestUpdate();
+    return;
+  }
   if (mappedInput.wasReleased(MappedInputManager::Button::Back)) {
     activityManager.goToApps();
     return;
@@ -315,5 +320,6 @@ void WeatherActivity::render(RenderLock&&) {
 
   const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_APP_REFRESH), tr(STR_APP_CITY), tr(STR_APP_CITY));
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
+  if (aboutGate_.open) appabout::drawOverlay(renderer, tr(STR_WEATHER_TITLE));
   renderer.displayBuffer();
 }

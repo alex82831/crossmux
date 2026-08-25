@@ -113,8 +113,8 @@ bool KlotskiActivity::tryMove(const int piece, const int dx, const int dy) {
     if (other == piece) continue;
     int ow = 0, oh = 0;
     klotski::pieceSize(l.pieces[other].type, ow, oh);
-    const bool overlap = nx < pos_[other].x + ow && pos_[other].x < nx + w && ny < pos_[other].y + oh &&
-                         pos_[other].y < ny + h;
+    const bool overlap =
+        nx < pos_[other].x + ow && pos_[other].x < nx + w && ny < pos_[other].y + oh && pos_[other].y < ny + h;
     if (overlap) return false;
   }
   pos_[piece].x = static_cast<int8_t>(nx);
@@ -135,6 +135,13 @@ void KlotskiActivity::undo() {
 }
 
 void KlotskiActivity::loop() {
+  if (aboutOpen_) {
+    if (mappedInput.wasAnyReleased()) {
+      aboutOpen_ = false;
+      requestUpdate();
+    }
+    return;
+  }
   if (menuOpen_) {
     handleMenuInput();
     return;
@@ -160,10 +167,14 @@ void KlotskiActivity::handleBoardInput() {
   }
 
   int dir = -1;
-  if (mappedInput.wasReleased(MappedInputManager::Button::Up)) dir = 0;
-  else if (mappedInput.wasReleased(MappedInputManager::Button::Down)) dir = 1;
-  else if (mappedInput.wasReleased(MappedInputManager::Button::Left)) dir = 2;
-  else if (mappedInput.wasReleased(MappedInputManager::Button::Right)) dir = 3;
+  if (mappedInput.wasReleased(MappedInputManager::Button::Up))
+    dir = 0;
+  else if (mappedInput.wasReleased(MappedInputManager::Button::Down))
+    dir = 1;
+  else if (mappedInput.wasReleased(MappedInputManager::Button::Left))
+    dir = 2;
+  else if (mappedInput.wasReleased(MappedInputManager::Button::Right))
+    dir = 3;
   if (dir >= 0) {
     if (tryMove(selected_, kDirDx[dir], kDirDy[dir])) {
       if (undoCount_ < kMaxUndo) undoLog_[undoCount_++] = static_cast<uint8_t>((selected_ << 2) | dir);
@@ -200,12 +211,12 @@ void KlotskiActivity::handleBoardInput() {
 }
 
 void KlotskiActivity::handleMenuInput() {
-  static constexpr int kMenuCount = 6;
+  static constexpr int kMenuCount = 7;
   const auto& metrics = UITheme::getInstance().getMetrics();
   const Rect panel = gameMenuPanelRect(renderer.getScreenWidth(), renderer.getScreenHeight(), 300,
                                        metrics.menuRowHeight, metrics.menuRowHeight, kMenuCount);
-  const auto result = gameHandleMenuInput(mappedInput, panel, metrics.menuRowHeight, metrics.menuRowHeight,
-                                          kMenuCount, menuSelected_);
+  const auto result =
+      gameHandleMenuInput(mappedInput, panel, metrics.menuRowHeight, metrics.menuRowHeight, kMenuCount, menuSelected_);
   if (result == GameMenuInputResult::SelectionChanged) {
     requestUpdate();
     return;
@@ -233,7 +244,11 @@ void KlotskiActivity::handleMenuInput() {
     case 4:  // next layout
       startLayout(layout_ + 1);
       break;
-    case 5:  // exit
+    case 5:  // about
+      menuOpen_ = false;
+      aboutOpen_ = true;
+      break;
+    case 6:  // exit
       activityManager.goToApps();
       return;
     default:
@@ -334,12 +349,16 @@ void KlotskiActivity::render(RenderLock&&) {
                             board.y + board.height + metrics.verticalSpacing, status);
 
   if (menuOpen_) {
-    const GameMenuItem items[6] = {{tr(STR_KLOTSKI_CONTINUE), nullptr}, {tr(STR_KLOTSKI_UNDO), nullptr},
-                                   {tr(STR_KLOTSKI_RESTART), nullptr},  {tr(STR_KLOTSKI_PREV), nullptr},
-                                   {tr(STR_KLOTSKI_NEXT), nullptr},     {tr(STR_EXIT), nullptr}};
-    const Rect panel = gameMenuPanelRect(sw, renderer.getScreenHeight(), 300, metrics.menuRowHeight,
-                                         metrics.menuRowHeight, 6);
-    gameDrawMenu(renderer, panel, metrics.menuRowHeight, metrics.menuRowHeight, tr(STR_KLOTSKI_TITLE), items, 6,
+    const GameMenuItem items[7] = {{tr(STR_KLOTSKI_CONTINUE), nullptr},
+                                   {tr(STR_KLOTSKI_UNDO), nullptr},
+                                   {tr(STR_KLOTSKI_RESTART), nullptr},
+                                   {tr(STR_KLOTSKI_PREV), nullptr},
+                                   {tr(STR_KLOTSKI_NEXT), nullptr},
+                                   {tr(STR_APP_ABOUT), nullptr},
+                                   {tr(STR_EXIT), nullptr}};
+    const Rect panel =
+        gameMenuPanelRect(sw, renderer.getScreenHeight(), 300, metrics.menuRowHeight, metrics.menuRowHeight, 7);
+    gameDrawMenu(renderer, panel, metrics.menuRowHeight, metrics.menuRowHeight, tr(STR_KLOTSKI_TITLE), items, 7,
                  menuSelected_);
   } else if (won_) {
     char msg[128];
@@ -356,6 +375,7 @@ void KlotskiActivity::render(RenderLock&&) {
   const auto labels =
       mappedInput.mapLabels(tr(STR_KLOTSKI_MENU), won_ ? tr(STR_KLOTSKI_NEXT) : tr(STR_KLOTSKI_PICK), "", "");
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
+  if (aboutOpen_) appabout::drawOverlay(renderer, tr(STR_KLOTSKI_TITLE));
   renderer.displayBuffer();
 }
 

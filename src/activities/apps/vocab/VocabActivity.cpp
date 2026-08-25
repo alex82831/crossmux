@@ -41,9 +41,12 @@ void VocabActivity::onExit() {
 void VocabActivity::countBoxes(int& fresh, int& learning, int& mastered) const {
   fresh = learning = mastered = 0;
   for (int i = 0; i < kVocabWordCount; ++i) {
-    if (box_[i] == 0) ++fresh;
-    else if (box_[i] == 1) ++learning;
-    else ++mastered;
+    if (box_[i] == 0)
+      ++fresh;
+    else if (box_[i] == 1)
+      ++learning;
+    else
+      ++mastered;
   }
 }
 
@@ -88,6 +91,11 @@ void VocabActivity::grade(const bool knew) {
 }
 
 void VocabActivity::loop() {
+  bool aboutRepaint = false;
+  if (aboutGate_.handle(mappedInput, aboutRepaint)) {
+    if (aboutRepaint) requestUpdate();
+    return;
+  }
   if (mappedInput.wasReleased(MappedInputManager::Button::Back)) {
     activityManager.goToApps();
     return;
@@ -160,6 +168,7 @@ void VocabActivity::render(RenderLock&&) {
   const auto labels = mappedInput.mapLabels(tr(STR_BACK), revealed_ ? tr(STR_VOCAB_NEXT) : tr(STR_VOCAB_REVEAL),
                                             tr(STR_VOCAB_KNOW), tr(STR_VOCAB_DONT_KNOW));
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
+  if (aboutGate_.open) appabout::drawOverlay(renderer, tr(STR_VOCAB_TITLE));
   renderer.displayBuffer();
 }
 

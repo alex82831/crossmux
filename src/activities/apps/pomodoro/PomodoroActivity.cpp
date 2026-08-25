@@ -109,6 +109,11 @@ void PomodoroActivity::skipPhase() {
 }
 
 void PomodoroActivity::loop() {
+  bool aboutRepaint = false;
+  if (aboutGate_.handle(mappedInput, aboutRepaint)) {
+    if (aboutRepaint) requestUpdate();
+    return;
+  }
   if (mappedInput.wasReleased(MappedInputManager::Button::Back)) {
     activityManager.goToApps();
     return;
@@ -163,7 +168,7 @@ void PomodoroActivity::render(RenderLock&&) {
   const int contentW = safe.width - 2 * metrics.contentSidePadding;
   int y = contentTop + metrics.verticalSpacing * 2;
 
-  const char* phaseText = phase_ == Phase::Work ? (running_ ? tr(STR_POMO_FOCUS) : tr(STR_POMO_READY))
+  const char* phaseText = phase_ == Phase::Work         ? (running_ ? tr(STR_POMO_FOCUS) : tr(STR_POMO_READY))
                           : phase_ == Phase::ShortBreak ? tr(STR_POMO_SHORT_BREAK)
                                                         : tr(STR_POMO_LONG_BREAK);
   UITheme::drawCenteredText(renderer, fullScreen, UI_12_FONT_ID, y, phaseText, true, EpdFontFamily::BOLD);
@@ -211,6 +216,7 @@ void PomodoroActivity::render(RenderLock&&) {
   const auto labels = mappedInput.mapLabels(tr(STR_BACK), running_ ? tr(STR_POMO_PAUSE) : tr(STR_POMO_START),
                                             tr(STR_POMO_PRESET), tr(STR_POMO_SKIP));
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
+  if (aboutGate_.open) appabout::drawOverlay(renderer, tr(STR_POMO_TITLE));
   renderer.displayBuffer();
 }
 

@@ -4,6 +4,7 @@
 
 #include "RssStore.h"
 #include "activities/UiListActivity.h"
+#include "activities/apps/netkit/AppAbout.h"
 
 // RSS entry screen: the subscription list from /rss-feeds.json with each
 // feed's cache status as its subtitle. Confirm opens a feed's article list,
@@ -34,4 +35,5 @@ class RssFeedListActivity final : public UiListActivity {
   std::string subtitles_[rssstore::kMaxFeeds];
   freeink::ui::ListItem rowItems[rssstore::kMaxFeeds]{};
   int feedCount_ = 0;
+  appabout::AboutGate aboutGate_;
 };

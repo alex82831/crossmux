@@ -4,6 +4,7 @@
 #include <string>
 
 #include "activities/Activity.h"
+#include "activities/apps/netkit/AppAbout.h"
 
 // Weather (天气): current conditions plus a 3-day outlook for a built-in list
 // of Chinese cities, fetched on demand from the free Open-Meteo API. The last
@@ -51,4 +52,6 @@ class WeatherActivity final : public Activity {
   uint32_t fetchedEpoch_ = 0;
   Status status_ = Status::Empty;
   bool fetching_ = false;
+
+  appabout::AboutGate aboutGate_;
 };

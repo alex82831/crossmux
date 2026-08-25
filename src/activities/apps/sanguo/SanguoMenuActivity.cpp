@@ -9,6 +9,7 @@
 #include "SanguoEngine.h"
 #include "SanguoGameActivity.h"
 #include "activities/ActivityManager.h"
+#include "activities/apps/netkit/AppAbout.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
 
@@ -31,7 +32,7 @@ void SanguoMenuActivity::onEnter() {
   requestUpdate();
 }
 
-int SanguoMenuActivity::mainItemCount() const { return hasSave_ ? 4 : 3; }
+int SanguoMenuActivity::mainItemCount() const { return hasSave_ ? 5 : 4; }
 
 void SanguoMenuActivity::loop() {
   const int count = view_ == View::Main ? mainItemCount() : view_ == View::FactionPick ? 3 : 0;
@@ -46,21 +47,21 @@ void SanguoMenuActivity::loop() {
     }
     return;
   }
-  if (view_ == View::Help) {
+  if (view_ == View::Help || view_ == View::About) {
     if (mappedInput.wasReleased(MappedInputManager::Button::Confirm)) {
       view_ = View::Main;
       requestUpdate();
     }
     return;
   }
-  if (mappedInput.wasReleased(MappedInputManager::Button::Up) ||
-      mappedInput.wasReleased(MappedInputManager::Button::Left)) {
+  if (count > 0 && (mappedInput.wasReleased(MappedInputManager::Button::Up) ||
+                    mappedInput.wasReleased(MappedInputManager::Button::Left))) {
     selected_ = static_cast<uint8_t>((selected_ + count - 1) % count);
     requestUpdate();
     return;
   }
-  if (mappedInput.wasReleased(MappedInputManager::Button::Down) ||
-      mappedInput.wasReleased(MappedInputManager::Button::Right)) {
+  if (count > 0 && (mappedInput.wasReleased(MappedInputManager::Button::Down) ||
+                    mappedInput.wasReleased(MappedInputManager::Button::Right))) {
     selected_ = static_cast<uint8_t>((selected_ + 1) % count);
     requestUpdate();
     return;
@@ -84,7 +85,10 @@ void SanguoMenuActivity::loop() {
     case 2:  // help
       view_ = View::Help;
       break;
-    case 3:  // back
+    case 3:  // about
+      view_ = View::About;
+      break;
+    case 4:  // back
     default:
       activityManager.goToApps();
       return;
@@ -110,12 +114,13 @@ void SanguoMenuActivity::render(RenderLock&&) {
         renderer, Rect{contentX, contentTop + metrics.verticalSpacing, contentW, safe.y + safe.height - contentTop},
         UI_10_FONT_ID, kHelpText, 24, true, EpdFontFamily::REGULAR, UITheme::TextVerticalAlignment::TOP);
   } else {
-    const char* mainItems[4];
+    const char* mainItems[5];
     int count = 0;
-    if (view_ == View::Main) {
+    if (view_ != View::FactionPick) {
       if (hasSave_) mainItems[count++] = tr(STR_SANGUO_CONTINUE);
       mainItems[count++] = tr(STR_SANGUO_NEW);
       mainItems[count++] = tr(STR_SANGUO_HELP);
+      mainItems[count++] = tr(STR_APP_ABOUT);
       mainItems[count++] = tr(STR_BACK);
     } else {
       char labels[3][48];
@@ -151,6 +156,7 @@ void SanguoMenuActivity::render(RenderLock&&) {
     }
   }
 
+  if (view_ == View::About) appabout::drawOverlay(renderer, tr(STR_SANGUO_TITLE));
   const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_SELECT), "", "");
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
   renderer.displayBuffer();
