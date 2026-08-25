@@ -111,6 +111,9 @@ ever appended; `CpApi.size` lets apps probe.
 /apps/<slug>.ver       installed version    (written by catalog installs)
 /apps/data/<slug>/     app data             (survives updates + reflashes)
 /apps/catalog.url      optional catalog URL override (one line)
+/apps/catalog.json     cached copy of the last fetched catalog (also
+                       shipped in the flash package); resolves display
+                       names for installed apps offline
 ```
 
 The App Manager scans `/apps`, and installs/updates from a JSON catalog

@@ -15,6 +15,7 @@ namespace {
 constexpr const char* kAppsDir = "/apps";
 constexpr const char* kDataDir = "/apps/data";
 constexpr const char* kCatalogUrlPath = "/apps/catalog.url";
+constexpr const char* kCatalogCachePath = "/apps/catalog.json";
 // Served straight from this repository, so a stock build has a live install
 // source with no extra infrastructure. Override with /apps/catalog.url.
 constexpr const char* kDefaultCatalogUrl =
@@ -128,17 +129,11 @@ std::string catalogUrl() {
   return std::string(kDefaultCatalogUrl);
 }
 
-int fetchCatalog(CatalogEntry* out, const int cap, std::string& err) {
-  std::string body;
-  if (!netkit::fetchToString(catalogUrl(), body, kMaxCatalogBytes)) {
-    err = "download failed";
-    return -1;
-  }
+namespace {
+
+int parseCatalog(const std::string& body, CatalogEntry* out, const int cap) {
   JsonDocument doc;
-  if (deserializeJson(doc, body) != DeserializationError::Ok) {
-    err = "bad json";
-    return -1;
-  }
+  if (deserializeJson(doc, body) != DeserializationError::Ok) return -1;
   int count = 0;
   for (JsonObjectConst item : doc["apps"].as<JsonArrayConst>()) {
     if (count >= cap) break;
@@ -154,8 +149,52 @@ int fetchCatalog(CatalogEntry* out, const int cap, std::string& err) {
     if (e.url[0] == '\0') continue;
     ++count;
   }
-  if (count == 0) err = "empty catalog";
   return count;
+}
+
+}  // namespace
+
+int fetchCatalog(CatalogEntry* out, const int cap, std::string& err) {
+  std::string body;
+  if (!netkit::fetchToString(catalogUrl(), body, kMaxCatalogBytes)) {
+    err = "download failed";
+    return -1;
+  }
+  const int count = parseCatalog(body, out, cap);
+  if (count < 0) {
+    err = "bad json";
+    return -1;
+  }
+  if (count == 0) {
+    err = "empty catalog";
+    return 0;
+  }
+  // Refresh the on-SD cache so installed-list names resolve offline. Best
+  // effort: a failed write only costs the cache, never the fetch result.
+  Storage.ensureDirectoryExists(kAppsDir);
+  HalFile f;
+  if (Storage.openFileForWrite("APPREG", kCatalogCachePath, f)) {
+    f.write(body.data(), body.size());
+  }
+  return count;
+}
+
+int loadCatalogCache(CatalogEntry* out, const int cap) {
+  if (!Storage.exists(kCatalogCachePath)) return 0;
+  std::string body;
+  body.resize(kMaxCatalogBytes);
+  const size_t n = Storage.readFileToBuffer(kCatalogCachePath, body.data(), body.size());
+  if (n == 0) return 0;
+  body.resize(n);
+  const int count = parseCatalog(body, out, cap);
+  return count > 0 ? count : 0;
+}
+
+const char* catalogNameFor(const CatalogEntry* cat, const int count, const char* slug) {
+  for (int i = 0; i < count; ++i) {
+    if (strcmp(cat[i].slug, slug) == 0 && cat[i].name[0] != '\0') return cat[i].name;
+  }
+  return nullptr;
 }
 
 bool installFromCatalog(const CatalogEntry& entry, std::string& err) {

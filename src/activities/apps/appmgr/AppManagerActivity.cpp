@@ -33,6 +33,9 @@ void formatKb(char* out, const size_t cap, const uint32_t bytes) {
 void AppManagerActivity::onEnter() {
   UiListActivity::onEnter();
   mode_ = Mode::Installed;
+  // The cached catalog (shipped in the flash package, refreshed on every
+  // successful fetch) supplies display names for installed apps offline.
+  catalogCount_ = dynappreg::loadCatalogCache(catalog_, dynappreg::kMaxCatalog);
   rebuildInstalledRows();
   requestUpdate();
 }
@@ -46,7 +49,7 @@ const char* AppManagerActivity::headerTitle() const {
 void AppManagerActivity::rebuildInstalledRows() {
   installedCount_ = dynappreg::scanInstalled(installed_, dynappreg::kMaxApps);
   int row = 0;
-  char buf[64];
+  char buf[96];
 
   rowTitles_[row] = tr(STR_APPMGR_INSTALLED);
   rowItems_[row] = {};
@@ -62,14 +65,23 @@ void AppManagerActivity::rebuildInstalledRows() {
     ++row;
   }
   for (int i = 0; i < installedCount_ && row < kMaxRows; ++i, ++row) {
-    rowTitles_[row] = installed_[i].slug;
+    // Prefer the catalog display name (中文); manually copied files still
+    // resolve because the flash package ships /apps/catalog.json.
+    const char* name = dynappreg::catalogNameFor(catalog_, catalogCount_, installed_[i].slug);
+    rowTitles_[row] = name != nullptr ? name : installed_[i].slug;
     char size[24], data[24];
     formatKb(size, sizeof(size), installed_[i].eappBytes);
     formatKb(data, sizeof(data), installed_[i].dataBytes);
+    const char* verPrefix = "";
+    char ver[20] = "";
     if (installed_[i].version[0] != '-' || installed_[i].version[1] != '\0') {
-      snprintf(buf, sizeof(buf), "v%s · %s · %s %s", installed_[i].version, size, tr(STR_APPMGR_DATA), data);
+      snprintf(ver, sizeof(ver), "v%s · ", installed_[i].version);
+      verPrefix = ver;
+    }
+    if (name != nullptr) {  // keep the file identity visible once renamed
+      snprintf(buf, sizeof(buf), "%s · %s%s · %s %s", installed_[i].slug, verPrefix, size, tr(STR_APPMGR_DATA), data);
     } else {
-      snprintf(buf, sizeof(buf), "%s · %s %s", size, tr(STR_APPMGR_DATA), data);
+      snprintf(buf, sizeof(buf), "%s%s · %s %s", verPrefix, size, tr(STR_APPMGR_DATA), data);
     }
     rowSubtitles_[row] = buf;
     rowItems_[row] = {};
@@ -124,6 +136,13 @@ void AppManagerActivity::rebuildCatalogRows() {
     rowCount_ = 1;
     nav.reset();
     return;
+  }
+  if (!catalogError_.empty()) {  // cached entries after a failed fetch
+    rowTitles_[row] = tr(STR_APPMGR_CATALOG_CACHED);
+    rowItems_[row] = {};
+    rowItems_[row].label = rowTitles_[row].c_str();
+    rowItems_[row].enabled = false;
+    ++row;
   }
   for (int i = 0; i < catalogCount_ && row < kMaxRows; ++i, ++row) {
     rowTitles_[row] = catalog_[i].name;
@@ -197,7 +216,8 @@ void AppManagerActivity::activateIndex(const int index) {
 void AppManagerActivity::showAppActions(const int installedIndex) {
   const char* actions[] = {tr(STR_APPMGR_RUN), tr(STR_APPMGR_UNINSTALL), tr(STR_APPMGR_CLEAR_DATA), tr(STR_CANCEL)};
   const std::string slug = installed_[installedIndex].slug;
-  optionPopup_.show(installed_[installedIndex].slug, actions, 4, 0, [this, slug](const int choice) {
+  const char* name = dynappreg::catalogNameFor(catalog_, catalogCount_, slug.c_str());
+  optionPopup_.show(name != nullptr ? name : slug.c_str(), actions, 4, 0, [this, slug](const int choice) {
     switch (choice) {
       case 0:
         runApp(slug.c_str());
@@ -244,6 +264,12 @@ void AppManagerActivity::openCatalog() {
     showBlockingStatus(tr(STR_APPMGR_FETCHING), nullptr);
     catalogError_.clear();
     catalogCount_ = dynappreg::fetchCatalog(catalog_, dynappreg::kMaxCatalog, catalogError_);
+    if (catalogCount_ <= 0) {
+      // Offline fallback: browse the cached catalog (installs still need the
+      // network). catalogError_ stays set so the list leads with a notice.
+      const int cached = dynappreg::loadCatalogCache(catalog_, dynappreg::kMaxCatalog);
+      if (cached > 0) catalogCount_ = cached;
+    }
     mode_ = Mode::Catalog;
     rebuildCatalogRows();
     requestUpdate();

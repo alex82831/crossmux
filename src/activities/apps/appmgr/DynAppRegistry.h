@@ -10,6 +10,9 @@
 //                           installer; uploads without it show "-")
 //   /apps/data/<slug>/      the app's sandboxed data (survives updates)
 //   /apps/catalog.url       optional one-line override of the catalog URL
+//   /apps/catalog.json      cached copy of the last fetched catalog (also
+//                           shipped in the flash package) — used offline to
+//                           resolve display names for installed apps
 //
 // The catalog is a JSON document: {"apps":[{"slug","name","version","bytes",
 // "url","note"}]}. The default URL points at this repository's store/
@@ -45,7 +48,12 @@ const char* installedVersion(const InstalledApp* apps, int count, const char* sl
 // ---- Online catalog ----------------------------------------------------
 std::string catalogUrl();
 // Fetches and parses the catalog. Returns entry count, or -1 with `err` set.
+// A successful fetch also refreshes the /apps/catalog.json cache.
 int fetchCatalog(CatalogEntry* out, int cap, std::string& err);
+// Parses the on-SD catalog cache. Returns entry count (0 if absent/invalid).
+int loadCatalogCache(CatalogEntry* out, int cap);
+// Display name for `slug` from a loaded catalog, or nullptr when unknown.
+const char* catalogNameFor(const CatalogEntry* cat, int count, const char* slug);
 // Downloads entry.url to /apps/<slug>.eapp (staged via a .tmp so a failed
 // download never clobbers a working install), then records the version.
 bool installFromCatalog(const CatalogEntry& entry, std::string& err);
