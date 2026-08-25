@@ -106,8 +106,7 @@ static void on_render(const CpApi* api) {
   api->fill_rect(0, 0, w, TOP_BAR, 1);
   api->draw_text(CP_FONT_UI, 12, 7, "生命游戏", 0, CP_TEXT_BOLD);
   cp_snprintf(buf, sizeof(buf), "第 %u 代 %s", g_generation, g_running ? ">>" : "||");
-  api->draw_text(CP_FONT_UI, w - 12 - api->text_width(CP_FONT_UI, buf, CP_TEXT_REGULAR), 7, buf, 0,
-                 CP_TEXT_REGULAR);
+  api->draw_text(CP_FONT_UI, w - 12 - api->text_width(CP_FONT_UI, buf, CP_TEXT_REGULAR), 7, buf, 0, CP_TEXT_REGULAR);
 
   for (int r = 0; r < g_rows; ++r) {
     for (int c = 0; c < g_cols; ++c) {
@@ -117,8 +116,7 @@ static void on_render(const CpApi* api) {
     }
   }
   api->draw_rect(g_origin_x - 2, g_origin_y - 2, g_cols * CELL + 3, g_rows * CELL + 3, 1);
-  api->draw_text(CP_FONT_SMALL, 12, h - 24, "确认=运行/暂停 · 上=随机 · 下=单步 · 点击=翻转", 1,
-                 CP_TEXT_REGULAR);
+  api->draw_text(CP_FONT_SMALL, 12, h - 24, "确认=运行/暂停 · 上=随机 · 下=单步 · 点击=翻转", 1, CP_TEXT_REGULAR);
 }
 
 static void on_exit(const CpApi* api) { api->file_write("grid.bin", g_grid, sizeof(g_grid)); }

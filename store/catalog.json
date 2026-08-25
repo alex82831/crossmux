@@ -1,20 +1,164 @@
 {
   "apps": [
     {
-      "slug": "sysmon",
-      "name": "系统监视器",
+      "slug": "avatar",
+      "name": "头像生成器",
       "version": "1.0.0",
-      "bytes": 4028,
-      "note": "电量/内存/运行时间实时仪表",
-      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/sysmon.eapp"
+      "bytes": 4836,
+      "note": "程序化随机头像",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/avatar.eapp"
+    },
+    {
+      "slug": "buddy",
+      "name": "抽卡伙伴",
+      "version": "1.0.0",
+      "bytes": 5464,
+      "note": "开蛋抽卡·收集",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/buddy.eapp"
+    },
+    {
+      "slug": "calculator",
+      "name": "计算器",
+      "version": "1.0.0",
+      "bytes": 7256,
+      "note": "定点小数·方向键",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/calculator.eapp"
+    },
+    {
+      "slug": "exchange",
+      "name": "汇率",
+      "version": "1.0.0",
+      "bytes": 5864,
+      "note": "8币种·离线缓存",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/exchange.eapp"
+    },
+    {
+      "slug": "g2048",
+      "name": "2048",
+      "version": "1.0.0",
+      "bytes": 5428,
+      "note": "经典 4x4 合并数字",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/g2048.eapp"
+    },
+    {
+      "slug": "gomoku",
+      "name": "五子棋",
+      "version": "1.0.0",
+      "bytes": 5772,
+      "note": "启发式 AI 对战",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/gomoku.eapp"
+    },
+    {
+      "slug": "klotski",
+      "name": "华容道",
+      "version": "1.0.0",
+      "bytes": 6812,
+      "note": "9 个验证布局·最少步数",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/klotski.eapp"
     },
     {
       "slug": "life",
       "name": "生命游戏",
       "version": "1.0.0",
       "bytes": 4220,
-      "note": "康威生命游戏·可点击编辑",
+      "note": "康威·可点击编辑",
       "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/life.eapp"
+    },
+    {
+      "slug": "minesweeper",
+      "name": "扫雷",
+      "version": "1.0.0",
+      "bytes": 7028,
+      "note": "三难度·旗标·安全首翻",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/minesweeper.eapp"
+    },
+    {
+      "slug": "poem",
+      "name": "每日诗词",
+      "version": "1.0.0",
+      "bytes": 5440,
+      "note": "今日诗词·历史20首",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/poem.eapp"
+    },
+    {
+      "slug": "pomodoro",
+      "name": "番茄钟",
+      "version": "1.0.0",
+      "bytes": 5524,
+      "note": "三方案·长休·统计",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/pomodoro.eapp"
+    },
+    {
+      "slug": "rss",
+      "name": "RSS 速览",
+      "version": "1.0.0",
+      "bytes": 6392,
+      "note": "多源抓取·可编辑订阅",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/rss.eapp"
+    },
+    {
+      "slug": "sanguo",
+      "name": "三国霸业",
+      "version": "1.0.0",
+      "bytes": 12740,
+      "note": "12城·20将·两个AI",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/sanguo.eapp"
+    },
+    {
+      "slug": "sokoban",
+      "name": "推箱子",
+      "version": "1.0.0",
+      "bytes": 6980,
+      "note": "内置关卡·悔步",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/sokoban.eapp"
+    },
+    {
+      "slug": "sudoku",
+      "name": "数独",
+      "version": "1.0.0",
+      "bytes": 6700,
+      "note": "回溯生成·三难度",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/sudoku.eapp"
+    },
+    {
+      "slug": "sysmon",
+      "name": "系统监视器",
+      "version": "1.0.0",
+      "bytes": 4028,
+      "note": "电量/内存/运行时间",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/sysmon.eapp"
+    },
+    {
+      "slug": "vocab",
+      "name": "单词卡",
+      "version": "1.0.0",
+      "bytes": 23932,
+      "note": "约250四级词·Leitner",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/vocab.eapp"
+    },
+    {
+      "slug": "weather",
+      "name": "天气",
+      "version": "1.0.0",
+      "bytes": 8544,
+      "note": "Open-Meteo·40城·5日",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/weather.eapp"
+    },
+    {
+      "slug": "woodfish",
+      "name": "电子木鱼",
+      "version": "1.0.0",
+      "bytes": 4460,
+      "note": "功德累计·持久化",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/woodfish.eapp"
+    },
+    {
+      "slug": "xiangqi",
+      "name": "中国象棋",
+      "version": "1.0.0",
+      "bytes": 7944,
+      "note": "完整规则·α-β AI",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/xiangqi.eapp"
     }
   ]
 }
