@@ -138,11 +138,13 @@ void WeatherActivity::loadState() {
   const String raw = Storage.readFile(kStatePath);
   int cachedCity = -1;
   if (raw.length() > 0) {
-    unsigned city = 0, epoch = 0, cached = 0;
-    if (sscanf(raw.c_str(), "%u %u %u", &city, &epoch, &cached) >= 1) {
-      cityIndex_ = static_cast<int>(city) % kWeatherCityCount;
+    int city = 0;
+    unsigned epoch = 0;
+    int cached = -1;
+    if (sscanf(raw.c_str(), "%d %u %d", &city, &epoch, &cached) >= 1) {
+      cityIndex_ = ((city % kWeatherCityCount) + kWeatherCityCount) % kWeatherCityCount;
       fetchedEpoch_ = epoch;
-      cachedCity = static_cast<int>(cached);
+      cachedCity = cached;
     }
   }
   if (cachedCity == cityIndex_) {
