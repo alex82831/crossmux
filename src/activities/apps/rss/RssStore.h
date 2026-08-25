@@ -51,6 +51,14 @@ struct CacheIndex {
 bool readCacheIndex(const char* path, CacheIndex& out);
 bool readCacheBody(const char* path, uint32_t offset, uint32_t len, std::string& out);
 
+// Cheap cache probe for list subtitles: record count + fetch epoch only.
+bool peekCache(const char* path, int& count, uint32_t& epoch);
+
+// Streaming fetch of one feed into its cache file (Wi-Fi must already be up).
+// Returns the number of cached articles; 0 means the fetch failed and any
+// previous cache was left untouched.
+int fetchFeedToCache(int feedIndex, const std::string& url);
+
 // Streams records into <path>.tmp and renames over the cache on commit, so a
 // failed fetch never destroys the previous cache.
 class CacheWriter {

@@ -84,13 +84,13 @@ void WeatherActivity::doFetch() {
   requestUpdateAndWait();  // paint the loading frame before the blocking GET
 
   const WeatherCity& city = kWeatherCities[cityIndex_];
-  char url[320];
+  char url[384];
   snprintf(url, sizeof(url),
            "https://api.open-meteo.com/v1/forecast?latitude=%.2f&longitude=%.2f"
            "&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m"
-           "&daily=weather_code,temperature_2m_max,temperature_2m_min"
-           "&timezone=Asia%%2FShanghai&forecast_days=3",
-           static_cast<double>(city.lat), static_cast<double>(city.lon));
+           "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
+           "&timezone=Asia%%2FShanghai&forecast_days=%d",
+           static_cast<double>(city.lat), static_cast<double>(city.lon), kForecastDays);
 
   std::string body;
   const bool ok = netkit::fetchToString(url, body, kMaxResponseBytes);
@@ -126,12 +126,45 @@ bool WeatherActivity::applyJson(const std::string& json) {
   JsonArray codes = daily["weather_code"];
   JsonArray tMax = daily["temperature_2m_max"];
   JsonArray tMin = daily["temperature_2m_min"];
-  for (int i = 0; i < 3; ++i) {
+  JsonArray precip = daily["precipitation_probability_max"];
+  JsonArray dates = daily["time"];
+  for (int i = 0; i < kForecastDays; ++i) {
     days_[i].code = (i < static_cast<int>(codes.size())) ? codes[i].as<int>() : 0;
     days_[i].tMax = (i < static_cast<int>(tMax.size())) ? tMax[i].as<float>() : 0.0f;
     days_[i].tMin = (i < static_cast<int>(tMin.size())) ? tMin[i].as<float>() : 0.0f;
+    days_[i].precipProb = (i < static_cast<int>(precip.size())) ? precip[i].as<int>() : 0;
+    days_[i].weekday = (i < static_cast<int>(dates.size())) ? weekdayOf(dates[i].as<const char*>()) : -1;
   }
   return true;
+}
+
+const char* WeatherActivity::dayLabel(const int index, char* buf, const size_t bufLen) const {
+  switch (index) {
+    case 0:
+      return tr(STR_WEATHER_TODAY);
+    case 1:
+      return tr(STR_WEATHER_TOMORROW);
+    case 2:
+      return tr(STR_WEATHER_DAY_AFTER);
+    default:
+      break;
+  }
+  static constexpr StrId kWeekdays[7] = {StrId::STR_WEEK_SUN, StrId::STR_WEEK_MON, StrId::STR_WEEK_TUE,
+                                         StrId::STR_WEEK_WED, StrId::STR_WEEK_THU, StrId::STR_WEEK_FRI,
+                                         StrId::STR_WEEK_SAT};
+  const int wd = days_[index].weekday;
+  if (wd >= 0 && wd < 7) return I18N.get(kWeekdays[wd]);
+  snprintf(buf, bufLen, "+%d", index);
+  return buf;
+}
+
+// Sakamoto's day-of-week from an ISO "YYYY-MM-DD" date; -1 when unparsable.
+int WeatherActivity::weekdayOf(const char* isoDate) {
+  int y = 0, m = 0, d = 0;
+  if (isoDate == nullptr || sscanf(isoDate, "%d-%d-%d", &y, &m, &d) != 3) return -1;
+  static constexpr int t[12] = {0, 3, 2, 5, 0, 3, 5, 1, 4, 6, 2, 4};
+  if (m < 3) y -= 1;
+  return (y + y / 4 - y / 100 + y / 400 + t[m - 1] + d) % 7;
 }
 
 void WeatherActivity::loadState() {
@@ -266,17 +299,15 @@ void WeatherActivity::render(RenderLock&&) {
     }
     y += metrics.verticalSpacing * 2;
 
-    // 3-day outlook: day label left, condition centred, min~max right.
-    static constexpr StrId kDayLabels[3] = {StrId::STR_WEATHER_TODAY, StrId::STR_WEATHER_TOMORROW,
-                                            StrId::STR_WEATHER_DAY_AFTER};
+    // 5-day outlook: day label left, condition after it, rain% + min~max right.
     const int rowH = renderer.getLineHeight(UI_10_FONT_ID) + metrics.verticalSpacing;
-    for (int i = 0; i < 3 && y + rowH <= contentTop + contentH; ++i) {
-      renderer.drawText(UI_10_FONT_ID, contentX, y, I18N.get(kDayLabels[i]));
+    for (int i = 0; i < kForecastDays && y + rowH <= contentTop + contentH; ++i) {
+      char labelBuf[24];
+      renderer.drawText(UI_10_FONT_ID, contentX, y, dayLabel(i, labelBuf, sizeof(labelBuf)));
       const char* cond = conditionText(days_[i].code);
-      renderer.drawText(UI_10_FONT_ID, contentX + contentW / 2 - renderer.getTextWidth(UI_10_FONT_ID, cond) / 2, y,
-                        cond);
-      snprintf(buf, sizeof(buf), "%.0f\xC2\xB0~%.0f\xC2\xB0", static_cast<double>(days_[i].tMin),
-               static_cast<double>(days_[i].tMax));
+      renderer.drawText(UI_10_FONT_ID, contentX + contentW * 30 / 100, y, cond);
+      snprintf(buf, sizeof(buf), "%d%%  %.0f\xC2\xB0~%.0f\xC2\xB0", days_[i].precipProb,
+               static_cast<double>(days_[i].tMin), static_cast<double>(days_[i].tMax));
       renderer.drawText(UI_10_FONT_ID, contentX + contentW - renderer.getTextWidth(UI_10_FONT_ID, buf), y, buf);
       y += rowH;
     }

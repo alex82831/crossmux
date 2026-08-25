@@ -6,19 +6,11 @@
 
 #include "MappedInputManager.h"
 #include "RssArticleViewActivity.h"
-#include "RssFeedParser.h"
 #include "activities/apps/netkit/NetKit.h"
 #include "activities/network/WifiSelectionActivity.h"
 #include "components/UITheme.h"
-#include "network/HttpDownloader.h"
 
 namespace fui = freeink::ui;
-
-namespace {
-// Transport-level guard: stop pulling a runaway feed once this much raw XML
-// has been consumed; 20 items are normally seen well before this.
-constexpr size_t kMaxFeedBytes = 256 * 1024;
-}  // namespace
 
 void RssArticleListActivity::onEnter() {
   UiListActivity::onEnter();
@@ -81,37 +73,7 @@ void RssArticleListActivity::drawBusy(const char* message) {
 
 void RssArticleListActivity::doFetch() {
   drawBusy(tr(STR_LOADING));
-
-  rssstore::CacheWriter writer;
-  if (!writer.open(feedIndex_)) {
-    LOG_ERR("RSS", "cache open failed for feed %d", feedIndex_);
-    fetchFailed_ = true;
-    loadCache();
-    requestUpdate();
-    return;
-  }
-
-  RssFeedParser parser([&writer](const RssFeedParser::Item& item) {
-    if (!writer.addItem(item.title, item.date, item.body)) return false;
-    return writer.count() < rssstore::kMaxArticles;
-  });
-
-  size_t consumed = 0;
-  HttpDownloader::fetchUrl(feedUrl_, [&](const uint8_t* data, const size_t len) {
-    consumed += len;
-    if (consumed > kMaxFeedBytes) return false;
-    return parser.write(data, len);
-  });
-
-  // The transfer is aborted on purpose once the article cap is hit, so judge
-  // by what was parsed, not by the transport result.
-  if (writer.count() > 0) {
-    fetchFailed_ = !writer.commit();
-  } else {
-    writer.abort();
-    fetchFailed_ = true;
-    LOG_ERR("RSS", "no articles parsed from feed %d (%u bytes)", feedIndex_, static_cast<unsigned>(consumed));
-  }
+  fetchFailed_ = rssstore::fetchFeedToCache(feedIndex_, feedUrl_) == 0;
   loadCache();
   requestUpdate();
 }

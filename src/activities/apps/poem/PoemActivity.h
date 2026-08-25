@@ -5,8 +5,9 @@
 #include "activities/Activity.h"
 
 // Daily Chinese poem (每日诗词): fetches one classical poem line from the
-// jinrishici open API on demand and keeps the last one cached on SD so the
-// screen still shows a poem offline. CN-build only (ENABLE_CHINESE_VERSION).
+// jinrishici open API on demand and keeps a rolling history of the last 20
+// on SD, browsable offline with Left/Right. CN-build only
+// (ENABLE_CHINESE_VERSION).
 class PoemActivity final : public Activity {
  public:
   PoemActivity(GfxRenderer& renderer, MappedInputManager& mappedInput) : Activity("Poem", renderer, mappedInput) {}
@@ -17,18 +18,28 @@ class PoemActivity final : public Activity {
   void render(RenderLock&&) override;
 
  private:
+  static constexpr int kMaxHistory = 20;
+
   enum class Status : uint8_t { Empty, Ready, Failed };
+
+  struct Poem {
+    std::string content;
+    std::string origin;
+    std::string author;
+  };
 
   void refresh();
   void doFetch();
-  bool applyJson(const std::string& json);
-  void loadCache();
+  bool parsePoem(const std::string& json, Poem& out) const;
+  void loadHistory();
+  void saveHistory() const;
+  void browse(int step);
 
-  // Poem text tops out around a few hundred bytes; strings live for the
-  // activity's lifetime and are replaced wholesale on refresh.
-  std::string content_;
-  std::string origin_;
-  std::string author_;
+  // Rolling history: ≤20 poems × a few hundred bytes ≈ 8KB of strings for
+  // offline browsing; freed with the activity.
+  Poem history_[kMaxHistory];
+  int count_ = 0;
+  int index_ = 0;  // 0 = newest
   Status status_ = Status::Empty;
   bool fetching_ = false;
 };

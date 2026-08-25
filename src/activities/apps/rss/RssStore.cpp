@@ -7,8 +7,15 @@
 #include <cstring>
 #include <ctime>
 
+#include "RssFeedParser.h"
+#include "network/HttpDownloader.h"
+
 namespace rssstore {
 namespace {
+
+// Transport-level guard: stop pulling a runaway feed once this much raw XML
+// has been consumed; 20 items are normally seen well before this.
+constexpr size_t kMaxFeedBytes = 256 * 1024;
 
 constexpr const char* kFeedsPath = "/rss-feeds.json";
 constexpr const char* kCacheDir = "/.crosspoint/rss";
@@ -198,6 +205,55 @@ void CacheWriter::abort() {
   if (file_.isOpen()) file_.close();  // close before remove of the same path
   Storage.remove(tmpPath_);
   count_ = 0;
+}
+
+bool peekCache(const char* path, int& count, uint32_t& epoch) {
+  count = 0;
+  epoch = 0;
+  HalFile file;
+  if (!Storage.openFileForRead(kLogTag, path, file)) return false;
+  LineReader reader(file);
+  char line[kMaxTitleBytes + 8];
+  if (!reader.readLine(line, sizeof(line))) return false;
+  unsigned e = 0;
+  if (sscanf(line, "CRSS1 %u", &e) != 1) return false;
+  epoch = e;
+  while (count < kMaxArticles) {
+    if (!reader.readLine(line, sizeof(line)) || strcmp(line, "@") != 0) break;
+    char lenLine[16];
+    if (!reader.readLine(line, sizeof(line))) break;  // title
+    if (!reader.readLine(line, sizeof(line))) break;  // date
+    if (!reader.readLine(lenLine, sizeof(lenLine))) break;
+    unsigned bodyLen = 0;
+    if (sscanf(lenLine, "%u", &bodyLen) != 1 || bodyLen > kMaxBodyBytes) break;
+    if (!reader.skip(bodyLen + 1)) break;
+    ++count;
+  }
+  return count > 0;
+}
+
+int fetchFeedToCache(const int feedIndex, const std::string& url) {
+  CacheWriter writer;
+  if (!writer.open(feedIndex)) {
+    LOG_ERR(kLogTag, "cache open failed for feed %d", feedIndex);
+    return 0;
+  }
+  RssFeedParser parser([&writer](const RssFeedParser::Item& item) {
+    if (!writer.addItem(item.title, item.date, item.body)) return false;
+    return writer.count() < kMaxArticles;
+  });
+  size_t consumed = 0;
+  HttpDownloader::fetchUrl(url, [&](const uint8_t* data, const size_t len) {
+    consumed += len;
+    if (consumed > kMaxFeedBytes) return false;
+    return parser.write(data, len);
+  });
+  // The transfer is aborted on purpose once the article cap is hit, so judge
+  // by what was parsed, not by the transport result.
+  if (writer.count() > 0 && writer.commit()) return writer.count();
+  writer.abort();
+  LOG_ERR(kLogTag, "no articles parsed from feed %d (%u bytes)", feedIndex, static_cast<unsigned>(consumed));
+  return 0;
 }
 
 }  // namespace rssstore
