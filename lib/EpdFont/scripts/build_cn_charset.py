@@ -99,6 +99,16 @@ def main() -> None:
         "so UI strings never silently drop glyphs.",
     )
     parser.add_argument(
+        "--require-common-from",
+        action="append",
+        default=[],
+        metavar="FILE",
+        help="Force-include every CJK Unified Ideograph found in FILE into the "
+        "common (8/10/12pt) tier only, NOT the 14/16/18pt i18n tier. Intended "
+        "for app data strings that only ever render at the small UI sizes "
+        "(city names, flashcard glosses, in-game text).",
+    )
+    parser.add_argument(
         "--review",
         type=int,
         default=50,
@@ -115,7 +125,8 @@ def main() -> None:
     pool_chars = {c for c in raw if not c.isspace()}
 
     required = load_required([Path(p) for p in args.require_from])
-    required_beyond_pool = sorted(required - pool_chars)
+    common_only = load_required([Path(p) for p in args.require_common_from])
+    required_beyond_pool = sorted((required | common_only) - pool_chars)
 
     if args.top < 1 or args.top > len(pool_chars):
         print(
@@ -128,9 +139,9 @@ def main() -> None:
     ranked = rank_chars(pool_chars)
     pool_kept = ranked[: args.top]
     pool_kept_chars = {c for c, _ in pool_kept}
-    forced_additions = required - pool_kept_chars
-    kept_chars_set = pool_kept_chars | required
-    pool_dropped = [(c, z) for c, z in ranked[args.top :] if c not in required]
+    forced_additions = (required | common_only) - pool_kept_chars
+    kept_chars_set = pool_kept_chars | required | common_only
+    pool_dropped = [(c, z) for c, z in ranked[args.top :] if c not in required and c not in common_only]
 
     # Sort kept chars back into a stable order (by codepoint) so file diffs are
     # readable when --top changes by a small amount. The font generation
@@ -140,7 +151,7 @@ def main() -> None:
     OUTPUT_FILE.write_text("".join(kept_chars), encoding="utf-8")
     written_chars = set(OUTPUT_FILE.read_text(encoding="utf-8"))
     missing_pool = pool_kept_chars - written_chars
-    missing_required = required - written_chars
+    missing_required = (required | common_only) - written_chars
     if missing_pool or missing_required:
         print(
             f"error: output dropped base glyphs {''.join(sorted(missing_pool))} "

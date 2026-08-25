@@ -42,7 +42,10 @@ CHARSET_FILE="cn_common_chars.txt"
 # feature that needs CJK glyphs not already covered at the point size where
 # it renders adds its own cn_<feature>_chars.txt here.
 # cn_almanac_chars.txt: ganzhi + lunar-row chars for ChineseCalendarFace.
-REQUIRE_FROM=(../../I18n/translations/chinese.yaml cn_almanac_chars.txt cn_apps_chars.txt)
+REQUIRE_FROM=(../../I18n/translations/chinese.yaml cn_almanac_chars.txt)
+# App data strings (city names, flashcard glosses, game text) render only at
+# the 8/10/12pt UI sizes; keep them out of the 14/16/18pt i18n tier.
+REQUIRE_COMMON_FROM=(cn_apps_chars.txt)
 TMP_DIR="instanced_fonts/NotoSansSC"
 SUBSET_OTF="$TMP_DIR/NotoSansSC-Regular.cncommon.otf"
 # Tiny OTF holding only the CJK chars that appear in i18n/feature sources (747
@@ -72,6 +75,9 @@ if [ -z "${SKIP_CHARSET:-}" ]; then
   require_args=()
   for f in "${REQUIRE_FROM[@]}"; do
     require_args+=(--require-from "$f")
+  done
+  for f in "${REQUIRE_COMMON_FROM[@]}"; do
+    require_args+=(--require-common-from "$f")
   done
   echo "Refreshing $CHARSET_FILE (require-from: ${REQUIRE_FROM[*]})..."
   "$PYTHON" build_cn_charset.py "${require_args[@]}"
