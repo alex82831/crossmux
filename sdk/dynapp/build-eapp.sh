@@ -35,6 +35,7 @@ CFLAGS=(
   -Wall -Wextra
   -I"$REPO_DIR/lib/DynApp"
   -I"$SDK_DIR/libmini"
+  -I"$SDK_DIR/libapp"
 )
 LDFLAGS=(
   -shared -nostdlib
@@ -44,7 +45,7 @@ LDFLAGS=(
   -Wl,--no-undefined
 )
 
-SRCS=("$APP_DIR"/*.c "$SDK_DIR/libmini/mini_libc.c")
+SRCS=("$APP_DIR"/*.c "$SDK_DIR/libmini/mini_libc.c" "$SDK_DIR/libapp/app.c")
 
 link_with_databases() {
   local data_vbase=$1 out=$2

@@ -6,6 +6,16 @@ a single `.eapp` file on SD; the App Manager (应用管理) installs them from
 the online catalog, and any file that lands in `/apps/` (web-file-manager
 upload, WebDAV, manual copy) is equally an install.
 
+**The firmware ships only the App Manager plus the pieces that are firmware
+infrastructure** — File Transfer (the app-install upload channel), OPDS and
+WeRead (library + reader integration), AirPage and Pixel Switch (MQTT),
+Reading Stats (reader DB) and Standby (the system sleep screen). Every other
+former built-in — the games, the tools, the network apps — is now an
+installable `.eapp` built from [`sdk/dynapp/apps/`](../../sdk/dynapp/apps) and
+served from [`store/`](../../store) (20 apps at time of writing). Their CJK
+text renders through the firmware's embedded fonts, so the Chinese build keeps
+its full glyph coverage even though the app code left the image.
+
 This document is the system of record for how that works. The pieces:
 
 | Piece | Where |
@@ -129,7 +139,20 @@ host-side — a bad image fails the build, not the device. Samples: `sysmon`
 (live battery/heap/uptime dashboard) and `life` (Conway, touch-editable,
 state persisted through the sandbox API).
 
+The SDK also ships `libapp` (menu, header, hint bar, the standard About
+overlay, JSON scanners) so ports stay compact, and `libmini` adds the
+64-bit-integer and `strchr`/`snprintf` helpers GCC expects. There is no
+floating point: soft-float would need libgcc, which cannot be linked, so
+apps use fixed-point integer math (see the calculator and exchange-rate
+apps).
+
+The `CpApi` grew a v1-appended block (probe `api->size`): centered/wrapped
+text, the device RTC, and networking — `wifi_ensure()` connects headlessly to
+a saved network (no Activity launch, so an app can fetch from inside its own
+loop) and `http_get()` does an HTTPS GET into a caller buffer. The host powers
+Wi-Fi down when a network app exits.
+
 Constraints for app authors: C only (no C++ runtime), no libc beyond the
-SDK mini-libc, static + stack memory only (no malloc in v1), image ≤ 96 KB,
-`on_loop` must return promptly (the watchdog is the firmware's), and all
-firmware access through the passed `CpApi` pointer.
+SDK mini-libc/libapp, no floating point, static + stack memory only (no malloc
+in v1), image ≤ 96 KB, `on_loop` must return promptly (the watchdog is the
+firmware's), and all firmware access through the passed `CpApi` pointer.

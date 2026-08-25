@@ -19,7 +19,6 @@ namespace dynappapi {
 void bind(GfxRenderer& renderer, const std::string& slug);
 void unbind();
 
-
 const CpApi* table();
 
 }  // namespace dynappapi

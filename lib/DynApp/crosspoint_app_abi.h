@@ -111,7 +111,36 @@ typedef struct CpApi {
   int32_t (*file_write)(const char* rel_path, const void* data, uint32_t len);
   int32_t (*file_delete)(const char* rel_path);
   int32_t (*file_exists)(const char* rel_path);
+
+  // ---- Appended in ABI v1, size-probed (check api->size) ----
+  // Text convenience: center on `cx`, or wrap within `width` for `max_lines`.
+  void (*draw_text_centered)(int32_t font, int32_t cx, int32_t y, const char* utf8, int32_t black, int32_t style);
+  void (*draw_text_wrapped)(int32_t font, int32_t x, int32_t y, int32_t width, int32_t max_lines, const char* utf8,
+                            int32_t black, int32_t style);
+
+  // Local wall clock (from the device RTC). Any out-pointer may be NULL.
+  // Returns 1 on success, 0 if the clock is unset.
+  int32_t (*rtc_now)(int32_t* year, int32_t* month, int32_t* day, int32_t* hour, int32_t* minute, int32_t* second,
+                     int32_t* weekday);
+
+  // Networking. wifi_connected() is a status check. wifi_ensure() brings the
+  // STA link up by connecting to a saved network (last-connected first),
+  // blocking up to timeout_ms; returns 1 if connected. http_get() does an
+  // HTTPS GET into `buf` (encrypted, server cert NOT verified — same posture
+  // as the firmware's other fetches), returning bytes read (< buf), or a
+  // negative CpHttpError. The host powers Wi-Fi down when the app exits.
+  int32_t (*wifi_connected)(void);
+  int32_t (*wifi_ensure)(uint32_t timeout_ms);
+  int32_t (*http_get)(const char* url, void* buf, uint32_t capacity);
 } CpApi;
+
+// http_get error codes (negative returns).
+enum {
+  CP_HTTP_ERR_ARGS = -1,
+  CP_HTTP_ERR_NO_WIFI = -2,
+  CP_HTTP_ERR_TRANSPORT = -3,
+  CP_HTTP_ERR_OVERFLOW = -4,
+};
 
 // ---- App callbacks ----------------------------------------------------
 typedef struct CpApp {
