@@ -70,7 +70,13 @@ IRAM mappings.
 The remaining size strategy is **per-size CJK character coverage** in
 `build-cn-builtin-fonts.sh` (see "Regenerating the CJK fonts" below).
 8/10/12pt carry the complete 3500-char pool plus required glyphs; 14/16/18pt
-carry only required glyphs. The smaller tiers shrink raw Flash-resident bitmap
+carry only required glyphs. Require sources come in two tiers:
+`REQUIRE_FROM` (chinese.yaml + feature files) feeds every size, while
+`REQUIRE_COMMON_FROM` (`cn_apps_chars.txt`, regenerated from the CN app
+sources' hanzi literals — city names, flashcard glosses, game text) feeds the
+8/10/12pt tier only, because the apps never render CJK above 12pt. Keeping
+those ~700 data characters out of the 14/16/18pt subsets saves several
+hundred KB of flash. The smaller tiers shrink raw Flash-resident bitmap
 and glyph metadata without adding a decompression buffer, heap allocation, or
 DRAM use.
 
