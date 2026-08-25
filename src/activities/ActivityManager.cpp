@@ -25,8 +25,14 @@
 #include "apps/weread/WeReadActivity.h"
 #endif
 #ifdef ENABLE_CHINESE_VERSION
+#include "apps/exchange/ExchangeRateActivity.h"
+#include "apps/klotski/KlotskiActivity.h"
 #include "apps/poem/PoemActivity.h"
+#include "apps/pomodoro/PomodoroActivity.h"
 #include "apps/rss/RssFeedListActivity.h"
+#include "apps/sanguo/SanguoGameActivity.h"
+#include "apps/sanguo/SanguoMenuActivity.h"
+#include "apps/vocab/VocabActivity.h"
 #include "apps/weather/WeatherActivity.h"
 #endif
 #include "apps/gomoku/GomokuMenuActivity.h"
@@ -496,6 +502,14 @@ void ActivityManager::goToWeRead() { replaceActivityWith<WeReadActivity>(); }
 void ActivityManager::goToWeather() { replaceActivityWith<WeatherActivity>(); }
 void ActivityManager::goToPoem() { replaceActivityWith<PoemActivity>(); }
 void ActivityManager::goToRss() { replaceActivityWith<RssFeedListActivity>(); }
+void ActivityManager::goToKlotski() { replaceActivityWith<KlotskiActivity>(); }
+void ActivityManager::goToPomodoro() { replaceActivityWith<PomodoroActivity>(); }
+void ActivityManager::goToExchangeRate() { replaceActivityWith<ExchangeRateActivity>(); }
+void ActivityManager::goToVocab() { replaceActivityWith<VocabActivity>(); }
+void ActivityManager::goToSanguo() { replaceActivityWith<SanguoMenuActivity>(); }
+void ActivityManager::startSanguoGame(uint8_t faction, bool newGame) {
+  replaceActivityWith<SanguoGameActivity>(faction, newGame);
+}
 #endif
 
 void ActivityManager::pushActivity(std::unique_ptr<Activity>&& activity) {

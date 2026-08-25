@@ -39,7 +39,12 @@ enum class AppId : uint8_t {
   Weather = 17,
   Poem = 18,
   Rss = 19,
-  Count = 20,
+  Sanguo = 20,
+  Klotski = 21,
+  Pomodoro = 22,
+  Exchange = 23,
+  Vocab = 24,
+  Count = 25,
 };
 
 struct AppEntry {
@@ -60,6 +65,11 @@ constexpr AppEntry kAppEntries[] = {
     {AppId::Rss, StrId::STR_RSS_TITLE, UIIcon::Rss, &ActivityManager::goToRss},
     {AppId::Weather, StrId::STR_WEATHER_TITLE, UIIcon::Weather, &ActivityManager::goToWeather},
     {AppId::Poem, StrId::STR_POEM_TITLE, UIIcon::Poem, &ActivityManager::goToPoem},
+    {AppId::Sanguo, StrId::STR_SANGUO_TITLE, UIIcon::Sanguo, &ActivityManager::goToSanguo},
+    {AppId::Klotski, StrId::STR_KLOTSKI_TITLE, UIIcon::Klotski, &ActivityManager::goToKlotski},
+    {AppId::Pomodoro, StrId::STR_POMO_TITLE, UIIcon::Pomodoro, &ActivityManager::goToPomodoro},
+    {AppId::Exchange, StrId::STR_FX_TITLE, UIIcon::Exchange, &ActivityManager::goToExchangeRate},
+    {AppId::Vocab, StrId::STR_VOCAB_TITLE, UIIcon::Vocab, &ActivityManager::goToVocab},
 #endif
     {AppId::ReadingStats, StrId::STR_READING_STATS, UIIcon::ReadingStats, &ActivityManager::goToReadingStatsMenu},
     {AppId::Sudoku, StrId::STR_SUDOKU_TITLE, UIIcon::Sudoku, &ActivityManager::goToSudoku},
@@ -140,6 +150,10 @@ static_assert(static_cast<uint8_t>(AppId::Woodfish) == 16, "the Woodfish app ID 
 static_assert(static_cast<uint8_t>(AppId::Weather) == 17 && static_cast<uint8_t>(AppId::Poem) == 18 &&
                   static_cast<uint8_t>(AppId::Rss) == 19,
               "the CN network app IDs must remain stable");
+static_assert(static_cast<uint8_t>(AppId::Sanguo) == 20 && static_cast<uint8_t>(AppId::Klotski) == 21 &&
+                  static_cast<uint8_t>(AppId::Pomodoro) == 22 && static_cast<uint8_t>(AppId::Exchange) == 23 &&
+                  static_cast<uint8_t>(AppId::Vocab) == 24,
+              "the second CN app batch IDs must remain stable");
 static_assert(appBit(AppId::Woodfish) == (uint32_t{1} << 16), "Woodfish visibility must use the first widened bit");
 static_assert(appIdsAreUnique(), "stable app IDs must not be reused");
 static_assert(CrossPointSettings::DEFAULT_HIDDEN_APPS_MASK ==

@@ -28,8 +28,13 @@
 #include "components/icons/weread.h"
 #endif
 #ifdef ENABLE_CHINESE_VERSION
+#include "components/icons/exchange.h"
+#include "components/icons/klotski.h"
 #include "components/icons/poem.h"
+#include "components/icons/pomodoro.h"
 #include "components/icons/rss.h"
+#include "components/icons/sanguo.h"
+#include "components/icons/vocab.h"
 #include "components/icons/weather.h"
 #endif
 #include "components/icons/cover.h"
@@ -147,6 +152,16 @@ const uint8_t* LyraTheme::iconForName(UIIcon icon, int size) {
         return PoemIcon;
       case UIIcon::Rss:
         return RssIcon;
+      case UIIcon::Sanguo:
+        return SanguoIcon;
+      case UIIcon::Klotski:
+        return KlotskiIcon;
+      case UIIcon::Pomodoro:
+        return PomodoroIcon;
+      case UIIcon::Exchange:
+        return ExchangeIcon;
+      case UIIcon::Vocab:
+        return VocabIcon;
 #endif
       default:
         return nullptr;

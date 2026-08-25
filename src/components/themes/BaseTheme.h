@@ -172,6 +172,11 @@ enum UIIcon {
   Weather,
   Poem,
   Rss,
+  Sanguo,
+  Klotski,
+  Pomodoro,
+  Exchange,
+  Vocab,
 #endif
 };
 

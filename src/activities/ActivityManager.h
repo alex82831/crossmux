@@ -139,6 +139,12 @@ class ActivityManager {
   void goToWeather();
   void goToPoem();
   void goToRss();
+  void goToKlotski();
+  void goToPomodoro();
+  void goToExchangeRate();
+  void goToVocab();
+  void goToSanguo();
+  void startSanguoGame(uint8_t faction, bool newGame);
 #endif
   void goHome(HomeMenuItem initialMenuItem = HomeMenuItem::NONE);
   MainTabFocus getMainTabFocus() const { return mainTabFocus; }
