@@ -672,3 +672,36 @@ initialized the display and physically rendered its startup verification page.
 Only after confirmation cancels rollback may the old firmware slot be erased
 and rebuilt as a font cache. If that copy is interrupted or fails, the
 uncommitted header remains invalid and the selected font loads from SD.
+
+## Dynamic app image (`.eapp`)
+
+An installable app under `/apps/<slug>.eapp`. Not a custom container: a
+standard **ELF32 little-endian RISC-V `ET_DYN`** shared object with a
+CrossMux-specific layout contract, produced by `sdk/dynapp/build-eapp.sh`
+and validated both host-side (`sdk/dynapp/verify-eapp.py`) and on device
+(`lib/DynApp/DynAppLoader`). Rationale and the address-domain math:
+[docs/engineering/dynapp.md](engineering/dynapp.md).
+
+Layout contract (loader-enforced):
+
+| Property | Requirement |
+|---|---|
+| Machine / type | `EM_RISCV` (243), `ET_DYN`, ELF32 LSB |
+| Text segment | linked at vaddr `0x700000` (= `SOC_I_D_OFFSET`), physical offset 0 |
+| Data segments | vaddr == physical offset in the image (< `0x700000`) |
+| Relocations | `R_RISCV_RELATIVE` only, targets/values inside the image |
+| Dynamic symbols | no undefined imports (`--no-undefined`) |
+| Entry | `cp_app_entry` inside text; returns `const CpApp*` (ABI v1) |
+| Image size | text+data+bss ≤ 96 KB (`DynAppLoader::kMaxImageBytes`) |
+| Header bounds | `e_phnum` ≤ 8, `e_shnum` ≤ 48 |
+
+Sidecar files, written by the App Manager:
+
+- `/apps/<slug>.ver` — installed version string (plain text, one line).
+- `/apps/data/<slug>/` — the app's sandboxed data directory; the only
+  filesystem area reachable through the `CpApi` file functions.
+- `/apps/catalog.url` — optional single-line override of the install
+  catalog URL (default: this repo's `store/catalog.json`).
+
+Catalog JSON: `{"apps":[{"slug","name","version","bytes","url","note"}]}`;
+`slug` is `[a-z0-9_-]{1,31}` and names both the image file and data dir.
