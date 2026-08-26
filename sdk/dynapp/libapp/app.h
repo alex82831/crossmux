@@ -40,6 +40,23 @@ void app_about_draw(const CpApi* api, const char* app_title);
 // Opens on a long Back hold when `allow_hold` is set; any key/tap closes it.
 int app_about_input(const CpApi* api, const CpInput* in, AppAbout* about, int allow_hold, int* repaint);
 
+// A scrolling single-column list, for the many app screens that outgrow
+// app_menu_draw's fixed 8 rows. app_list_fit() computes how many rows the
+// remaining screen height holds; draw and input keep `sel` visible.
+typedef struct {
+  int sel, top;        // selection, and the first visible row
+  int y, row_h, rows;  // geometry, filled by app_list_fit()
+} AppList;
+
+void app_list_fit(const CpApi* api, AppList* l, int top_y, int row_h);
+void app_list_draw(const CpApi* api, AppList* l, const char* const* items, int count);
+// Same, for lists whose rows are not an array of pointers (packed buffers,
+// generated labels). `row` is called once per visible row only.
+typedef const char* (*AppRowFn)(int index, void* ctx);
+void app_list_draw_fn(const CpApi* api, AppList* l, AppRowFn row, void* ctx, int count);
+// Up/Down move, PageBack/PageForward jump a screen. 1 when Confirm fired.
+int app_list_input(const CpApi* api, const CpInput* in, AppList* l, int count);
+
 // Convenience: clamp helper and a centered multi-line message screen.
 int app_clampi(int v, int lo, int hi);
 void app_message(const CpApi* api, const char* line);

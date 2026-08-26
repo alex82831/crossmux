@@ -195,3 +195,65 @@ int app_json_str(const char* buf, const char* key, char* out, int cap) {
   out[n] = 0;
   return 1;
 }
+
+// --- scrolling list -------------------------------------------------------
+
+void app_list_fit(const CpApi* api, AppList* l, int top_y, int row_h) {
+  l->y = top_y;
+  l->row_h = row_h > 0 ? row_h : 34;
+  const int avail = api->screen_height() - top_y - APP_FOOTER_H;
+  l->rows = avail / l->row_h;
+  if (l->rows < 1) l->rows = 1;
+}
+
+static void app_list_scroll_into_view(AppList* l, int count) {
+  if (l->sel < 0) l->sel = 0;
+  if (l->sel > count - 1) l->sel = count > 0 ? count - 1 : 0;
+  if (l->sel < l->top) l->top = l->sel;
+  if (l->sel >= l->top + l->rows) l->top = l->sel - l->rows + 1;
+  if (l->top > count - l->rows) l->top = count - l->rows;
+  if (l->top < 0) l->top = 0;
+}
+
+void app_list_draw_fn(const CpApi* api, AppList* l, AppRowFn row, void* ctx, int count) {
+  app_list_scroll_into_view(l, count);
+  const int w = api->screen_width();
+  const int th = api->line_height(CP_FONT_UI);
+  for (int i = 0; i < l->rows; ++i) {
+    const int idx = l->top + i;
+    if (idx >= count) break;
+    const int y = l->y + i * l->row_h;
+    const int selected = (idx == l->sel);
+    if (selected) api->fill_rect(8, y, w - 16, l->row_h, 1);
+    const char* text = row(idx, ctx);
+    if (text) api->draw_text(CP_FONT_UI, 20, y + (l->row_h - th) / 2, text, selected ? 0 : 1, CP_TEXT_REGULAR);
+  }
+  // Scrollbar, drawn only when it says something.
+  if (count > l->rows) {
+    const int trackH = l->rows * l->row_h;
+    int knob = trackH * l->rows / count;
+    if (knob < 8) knob = 8;
+    const int span = trackH - knob;
+    const int denom = count - l->rows;
+    const int off = denom > 0 ? span * l->top / denom : 0;
+    api->draw_rect(w - 7, l->y, 4, trackH, 1);
+    api->fill_rect(w - 7, l->y + off, 4, knob, 1);
+  }
+}
+
+static const char* app_list_row_array(int index, void* ctx) { return ((const char* const*)ctx)[index]; }
+
+void app_list_draw(const CpApi* api, AppList* l, const char* const* items, int count) {
+  app_list_draw_fn(api, l, app_list_row_array, (void*)items, count);
+}
+
+int app_list_input(const CpApi* api, const CpInput* in, AppList* l, int count) {
+  (void)api;
+  if (count <= 0) return 0;
+  if (in->released & CP_BTN_UP) l->sel = (l->sel + count - 1) % count;
+  if (in->released & CP_BTN_DOWN) l->sel = (l->sel + 1) % count;
+  if (in->released & CP_BTN_PAGE_BACK) l->sel = app_clampi(l->sel - l->rows, 0, count - 1);
+  if (in->released & CP_BTN_PAGE_FORWARD) l->sel = app_clampi(l->sel + l->rows, 0, count - 1);
+  app_list_scroll_into_view(l, count);
+  return (in->released & CP_BTN_CONFIRM) ? 1 : 0;
+}

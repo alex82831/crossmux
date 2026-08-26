@@ -36,6 +36,7 @@ CFLAGS=(
   -I"$REPO_DIR/lib/DynApp"
   -I"$SDK_DIR/libmini"
   -I"$SDK_DIR/libapp"
+  -I"$SDK_DIR/libai"
 )
 LDFLAGS=(
   -shared -nostdlib
@@ -46,6 +47,12 @@ LDFLAGS=(
 )
 
 SRCS=("$APP_DIR"/*.c "$SDK_DIR/libmini/mini_libc.c" "$SDK_DIR/libapp/app.c")
+
+# libai is opt-in: it carries ~14KB of .bss for the request/response buffers,
+# so only apps that actually include "ai.h" link it in.
+if grep -qls '#include "ai.h"' "$APP_DIR"/*.c "$APP_DIR"/*.h 2>/dev/null; then
+  SRCS+=("$SDK_DIR/libai/ai.c")
+fi
 
 link_with_databases() {
   local data_vbase=$1 out=$2
