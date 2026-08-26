@@ -14,8 +14,8 @@
 
 typedef enum {
   ST_HOME = 0,
-  ST_TYPING,   // host keyboard is up
-  ST_THINKING, // busy screen painted, call runs next frame
+  ST_TYPING,    // host keyboard is up
+  ST_THINKING,  // busy screen painted, call runs next frame
   ST_ANSWER,
   ST_SETTINGS,
   ST_SET_EDIT,
@@ -36,7 +36,7 @@ static AppAbout g_about;
 
 static State g_state;
 static EditTarget g_edit;
-static char g_question[AI_INPUT_MAX];   // what was actually sent
+static char g_question[AI_INPUT_MAX];  // what was actually sent
 static char g_hist[HIST_TURNS][HIST_LEN];
 static char g_roles[HIST_TURNS][12];
 static int g_hist_count;

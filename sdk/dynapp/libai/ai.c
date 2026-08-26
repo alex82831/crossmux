@@ -288,9 +288,7 @@ int ai_config_save(const CpApi* api, const AiConfig* cfg) {
   return ok;
 }
 
-int ai_config_ready(const AiConfig* cfg) {
-  return cfg->base_url[0] != 0 && cfg->api_key[0] != 0 && cfg->model[0] != 0;
-}
+int ai_config_ready(const AiConfig* cfg) { return cfg->base_url[0] != 0 && cfg->api_key[0] != 0 && cfg->model[0] != 0; }
 
 void ai_endpoint(const AiConfig* cfg, char* out, int cap) {
   int n = (int)strlen(cfg->base_url);

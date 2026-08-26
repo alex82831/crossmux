@@ -35,9 +35,9 @@ static int g_entries;
 
 static char g_path[PATH_LEN];  // the open file
 static char g_chunk[CHUNK_LEN];
-static uint32_t g_offset;                // file offset of g_chunk
-static uint32_t g_next_offset;           // where the following chunk starts
-static uint32_t g_stack[STACK_MAX];      // chunk starts we came through
+static uint32_t g_offset;            // file offset of g_chunk
+static uint32_t g_next_offset;       // where the following chunk starts
+static uint32_t g_stack[STACK_MAX];  // chunk starts we came through
 static int g_depth;
 static int g_menu_sel;
 static char g_status[80];

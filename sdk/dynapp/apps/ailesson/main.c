@@ -51,8 +51,8 @@ static int g_pick_sel;
 static int g_viewing;  // index into g_seen of the card on screen, -1 = none
 
 static const char* kSubjects[] = {
-    "一个科学原理", "一个经济学概念", "一个心理学效应", "一个哲学观点", "一个中文成语",
-    "一句地道英文表达", "一个编程知识点", "一个健康常识", "一个历史事件的来龙去脉", "自定义…",
+    "一个科学原理",     "一个经济学概念", "一个心理学效应", "一个哲学观点",           "一个中文成语",
+    "一句地道英文表达", "一个编程知识点", "一个健康常识",   "一个历史事件的来龙去脉", "自定义…",
 };
 #define SUBJECT_COUNT ((int)(sizeof(kSubjects) / sizeof(kSubjects[0])))
 
@@ -117,11 +117,12 @@ static void extract_title(const char* body, char* out, int cap) {
 }
 
 static void build_prompts(void) {
-  ai_str_copy(g_sys, sizeof(g_sys),
-              "你在给一台电子墨水屏阅读器写每日学习卡片。严格按下面的格式输出，"
-              "每项一行，不要 Markdown 记号，不要多余的话：\n"
-              "标题：（不超过 14 个字）\n是什么：\n为什么重要：\n一个例子：\n今天可以试试：（一个五分钟内能做完的具体动作）\n"
-              "全部合计不超过 260 字。");
+  ai_str_copy(
+      g_sys, sizeof(g_sys),
+      "你在给一台电子墨水屏阅读器写每日学习卡片。严格按下面的格式输出，"
+      "每项一行，不要 Markdown 记号，不要多余的话：\n"
+      "标题：（不超过 14 个字）\n是什么：\n为什么重要：\n一个例子：\n今天可以试试：（一个五分钟内能做完的具体动作）\n"
+      "全部合计不超过 260 字。");
   ai_str_copy(g_ask, sizeof(g_ask), "今天请教我");
   ai_str_append(g_ask, sizeof(g_ask), g_subject[0] ? g_subject : "一个科学原理");
   ai_str_append(g_ask, sizeof(g_ask), "。");
