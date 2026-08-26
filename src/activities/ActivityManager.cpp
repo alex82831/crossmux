@@ -19,6 +19,7 @@
 #ifndef SIMULATOR
 #include "apps/appmgr/AppManagerActivity.h"
 #include "apps/appmgr/DynAppActivity.h"
+#include "apps/filemgr/FileManagerActivity.h"
 #endif
 #include "apps/pixel-switch/PixelSwitchActivity.h"
 #include "apps/reading-stats/ReadingStatsActivity.h"
@@ -459,6 +460,8 @@ void ActivityManager::goToWeRead() { replaceActivityWith<WeReadActivity>(); }
 
 #ifndef SIMULATOR
 void ActivityManager::goToAppManager() { replaceActivityWith<AppManagerActivity>(); }
+
+void ActivityManager::goToFileManager() { replaceActivityWith<FileManagerActivity>(); }
 
 void ActivityManager::startDynApp(const std::string& eappPath, const std::string& slug) {
   replaceActivityWith<DynAppActivity>(eappPath, slug);

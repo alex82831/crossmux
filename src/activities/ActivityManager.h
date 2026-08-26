@@ -125,6 +125,7 @@ class ActivityManager {
 #endif
 #ifndef SIMULATOR
   void goToAppManager();
+  void goToFileManager();
   void startDynApp(const std::string& eappPath, const std::string& slug);
 #endif
   void goHome(HomeMenuItem initialMenuItem = HomeMenuItem::NONE);

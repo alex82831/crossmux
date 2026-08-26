@@ -45,7 +45,8 @@ enum class AppId : uint8_t {
   Exchange = 23,
   Vocab = 24,
   AppManager = 25,
-  Count = 26,
+  FileManager = 26,
+  Count = 27,
 };
 
 struct AppEntry {
@@ -67,6 +68,9 @@ constexpr AppEntry kAppEntries[] = {
     {AppId::AppManager, StrId::STR_APPMGR_TITLE, UIIcon::AppStore, &ActivityManager::goToAppManager},
 #endif
     {AppId::FileTransfer, StrId::STR_FILE_TRANSFER, UIIcon::Transfer, &ActivityManager::goToFileTransfer},
+#ifndef SIMULATOR
+    {AppId::FileManager, StrId::STR_FILEMGR_TITLE, UIIcon::Folder, &ActivityManager::goToFileManager},
+#endif
     {AppId::OpdsBrowser, StrId::STR_OPDS_BROWSER, UIIcon::Opds, &ActivityManager::goToBrowser},
 #ifdef ENABLE_CHINESE_VERSION
     {AppId::WeRead, StrId::STR_WEREAD_TITLE, UIIcon::WeRead, &ActivityManager::goToWeRead},

@@ -137,7 +137,7 @@ static void press(const CpApi* api, int k) {
     set_display_num(display_val() / 100);
     g_fresh = 1;
     return;
-  }               // %
+  }  // %
   if (k == 18) {  // backspace
     int len = (int)strlen(g_display);
     if (len > 1)
