@@ -10,6 +10,7 @@
 #include "DynAppApi.h"
 #include "MappedInputManager.h"
 #include "activities/ActivityManager.h"
+#include "activities/util/KeyboardEntryActivity.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
 
@@ -128,6 +129,27 @@ void DynAppActivity::loop() {
   // Serve a LAN renderer pulling a track the app published (music player).
   // No-op unless something is published.
   dynappapi::pumpMediaServer();
+
+  // An app asked for typed input: open the keyboard as a child activity. A
+  // push does not call onExit, so the .eapp stays loaded underneath and polls
+  // for the result once we resume.
+  {
+    std::string title, initial;
+    uint32_t maxLen = 0;
+    if (dynappapi::takeTextInputRequest(title, initial, maxLen)) {
+      const bool started = startActivityForResultWith<KeyboardEntryActivity>(
+          [](const ActivityResult& result) {
+            if (result.isCancelled || !std::holds_alternative<KeyboardResult>(result.data)) {
+              dynappapi::deliverTextInput("", true);
+              return;
+            }
+            dynappapi::deliverTextInput(std::get<KeyboardResult>(result.data).text, false);
+          },
+          title, initial, static_cast<size_t>(maxLen), InputType::Text);
+      if (!started) dynappapi::deliverTextInput("", true);
+      return;  // the child owns the screen until it finishes
+    }
+  }
 
   const uint32_t flags = loader_.app()->on_loop(dynappapi::table(), &input);
   if (flags & CP_LOOP_EXIT) {

@@ -151,8 +151,15 @@ typedef struct CpApi {
   int32_t (*ssdp_discover)(const char* search_target, uint32_t timeout_ms, char* buf, uint32_t capacity);
 
   // HTTP POST with an explicit content type and one optional extra header
-  // (SOAPAction, for UPnP). Returns bytes of the response body, or a negative
-  // CpHttpError.
+  // ("SOAPAction: ..." for UPnP, "Authorization: Bearer ..." for an API).
+  // Returns bytes of the response body, or a negative CpHttpError; on
+  // CP_HTTP_ERR_STATUS and CP_HTTP_ERR_OVERFLOW the body is still in `buf`.
+  //
+  // https works, but — exactly like http_get and every other fetch this
+  // firmware makes — it is encrypted with the server UNVERIFIED: the wolfSSL
+  // transport has no CA bundle wired up, and linking mbedTLS alongside it to
+  // get one costs ~193KB of flash. Treat anything sent through here as
+  // readable by an active man-in-the-middle on a hostile network.
   int32_t (*http_post)(const char* url, const char* content_type, const char* extra_header, const char* body, void* buf,
                        uint32_t capacity);
 
@@ -161,14 +168,42 @@ typedef struct CpApi {
   // keeps the file reachable until the next call. Only audio/video types are
   // accepted. Returns 1 on success, 0 on refusal (no link, bad type, missing).
   int32_t (*media_publish)(const char* abs_path, char* url_out, uint32_t capacity);
+
+  // ---- Appended again, size-probed: text entry, shared config, file reads ----
+  // What an app needs to talk to a cloud service: a way to take typed input,
+  // one place to keep credentials so every app does not ask again, and
+  // read access to content already on the card.
+
+  // Ask the host to open its on-screen keyboard. The app cannot block, so this
+  // is request-then-poll: call begin() once, return CP_LOOP_IDLE, then call
+  // result() each frame. The app stays loaded while the keyboard is up.
+  //   begin()  -> 1 when the request was accepted
+  //   result() -> 1 text ready (written to buf), 0 still open, -1 cancelled,
+  //               -2 nothing was requested
+  int32_t (*text_input_begin)(const char* title, const char* initial, uint32_t max_len);
+  int32_t (*text_input_result)(char* buf, uint32_t capacity);
+
+  // Cross-app key/value store under /apps/data/_shared/. Deliberately shared:
+  // an API key typed once should work in every app that needs it. Keys are
+  // [a-z0-9_]. get() returns bytes written (0 when unset), set() 1 on success.
+  int32_t (*shared_get)(const char* key, char* buf, uint32_t capacity);
+  int32_t (*shared_set)(const char* key, const char* value);
+
+  // Read-only read of an absolute SD path, for content the user already has
+  // (books, notes). `offset` allows paging through a file larger than RAM.
+  // Returns bytes read, or negative on error.
+  int32_t (*file_read_abs)(const char* abs_path, uint32_t offset, void* buf, uint32_t capacity);
 } CpApi;
 
-// http_get error codes (negative returns).
+// http_get / http_post error codes (negative returns).
 enum {
   CP_HTTP_ERR_ARGS = -1,
   CP_HTTP_ERR_NO_WIFI = -2,
   CP_HTTP_ERR_TRANSPORT = -3,
   CP_HTTP_ERR_OVERFLOW = -4,
+  // The server answered, but not with 2xx. `buf` still holds the response
+  // body, which is where an API puts the reason (bad key, no quota, ...).
+  CP_HTTP_ERR_STATUS = -5,
 };
 
 // ---- App callbacks ----------------------------------------------------

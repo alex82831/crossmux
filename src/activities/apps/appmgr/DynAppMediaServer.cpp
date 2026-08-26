@@ -7,10 +7,10 @@
 #include <Logging.h>
 #include <Memory.h>
 
-#include "util/TaskWatchdog.h"
-
 #include <cstdio>
 #include <cstring>
+
+#include "util/TaskWatchdog.h"
 
 namespace {
 
@@ -25,8 +25,8 @@ struct MediaType {
 // Only these are served. Renderers reject what they cannot decode anyway, and
 // the allow-list keeps this from becoming a general file-exfiltration route.
 constexpr MediaType kTypes[] = {
-    {".mp3", "audio/mpeg"},  {".m4a", "audio/mp4"},   {".aac", "audio/aac"},   {".wav", "audio/wav"},
-    {".flac", "audio/flac"}, {".ogg", "audio/ogg"},   {".opus", "audio/opus"}, {".wma", "audio/x-ms-wma"},
+    {".mp3", "audio/mpeg"},  {".m4a", "audio/mp4"}, {".aac", "audio/aac"},   {".wav", "audio/wav"},
+    {".flac", "audio/flac"}, {".ogg", "audio/ogg"}, {".opus", "audio/opus"}, {".wma", "audio/x-ms-wma"},
     {".mp4", "video/mp4"},   {".m4b", "audio/mp4"},
 };
 
@@ -219,7 +219,8 @@ void DynAppMediaServer::serve(WiFiClient& client, const std::string& path, const
   const uint32_t total = static_cast<uint32_t>(file.fileSize());
   if (hasRange && rangeStart >= total) {
     char hdr[128];
-    snprintf(hdr, sizeof(hdr), "HTTP/1.1 416 Range Not Satisfiable\r\nContent-Range: bytes */%u\r\nConnection: close\r\n\r\n",
+    snprintf(hdr, sizeof(hdr),
+             "HTTP/1.1 416 Range Not Satisfiable\r\nContent-Range: bytes */%u\r\nConnection: close\r\n\r\n",
              static_cast<unsigned>(total));
     client.print(hdr);
     client.stop();

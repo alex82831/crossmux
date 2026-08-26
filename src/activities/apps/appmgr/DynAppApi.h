@@ -27,6 +27,11 @@ void pumpMediaServer();
 // preventAutoSleep() so the idle timer cannot cut a song off mid-stream.
 bool isServingMedia();
 
+// Text-entry handshake, driven by the host between frames: it claims a pending
+// request, opens the keyboard, and hands the outcome back.
+bool takeTextInputRequest(std::string& title, std::string& initial, uint32_t& maxLen);
+void deliverTextInput(const std::string& text, bool cancelled);
+
 const CpApi* table();
 
 }  // namespace dynappapi

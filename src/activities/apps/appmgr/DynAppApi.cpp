@@ -8,9 +8,9 @@
 #include <HalPowerManager.h>
 #include <HalStorage.h>
 #include <Logging.h>
+#include <SecureHttpClient.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
-#include <esp_http_client.h>
 #include <esp_random.h>
 #include <esp_system.h>
 
@@ -282,59 +282,143 @@ int32_t apiSsdpDiscover(const char* searchTarget, const uint32_t timeoutMs, char
   return static_cast<int32_t>(used);
 }
 
-// UPnP control is plain HTTP on the LAN, so this goes straight to
-// esp_http_client rather than through HttpDownloader's wolfSSL path — no
-// reason to touch the reader's download code for a SOAP call.
+// Deliberately SecureHttpClient — the same transport every other fetch in
+// this firmware uses. esp_http_client looks like the obvious choice for a
+// one-shot POST, but it drags in mbedTLS as a *second* complete TLS stack
+// alongside wolfSSL: measured at +193KB of flash on a build already past
+// 90%, to serve this single call. The cost of sharing the existing one is
+// that wolfSSL here has no CA bundle wired up, so — like every other request
+// the device makes — this is encrypted but the server is not authenticated.
 int32_t apiHttpPost(const char* url, const char* contentType, const char* extraHeader, const char* body, void* buf,
                     const uint32_t capacity) {
   if (url == nullptr || buf == nullptr || capacity == 0) return CP_HTTP_ERR_ARGS;
   if (!netkit::wifiConnected()) return CP_HTTP_ERR_NO_WIFI;
 
-  esp_http_client_config_t cfg = {};
-  cfg.url = url;
-  cfg.method = HTTP_METHOD_POST;
-  cfg.timeout_ms = 8000;
-  esp_http_client_handle_t client = esp_http_client_init(&cfg);
-  if (client == nullptr) return CP_HTTP_ERR_TRANSPORT;
+  freeink::SecureHttpClient http;
+  // Generous: an LLM call routinely takes 20-40s to answer. Safe for the
+  // watchdog because a blocking socket read yields (nothing is subscribed to
+  // the TWDT here, and the idle task keeps running).
+  http.setTimeout(45000);
+  http.setInsecure();
+  if (!http.begin(std::string(url))) return CP_HTTP_ERR_ARGS;
+  http.setUserAgent("CrossPoint-ESP32-" CROSSPOINT_VERSION);
+  http.addHeader("Content-Type", contentType != nullptr ? contentType : "text/xml; charset=\"utf-8\"");
 
-  esp_http_client_set_header(client, "Content-Type",
-                             contentType != nullptr ? contentType : "text/xml; charset=\"utf-8\"");
-  // One optional "Name: value" header (SOAPAction for UPnP).
+  // One optional "Name: value" header (SOAPAction for UPnP, Authorization for
+  // an LLM endpoint).
   if (extraHeader != nullptr && extraHeader[0] != '\0') {
     const char* colon = strchr(extraHeader, ':');
     if (colon != nullptr) {
-      char name[64];
-      const size_t nameLen = static_cast<size_t>(colon - extraHeader);
-      if (nameLen < sizeof(name)) {
-        memcpy(name, extraHeader, nameLen);
-        name[nameLen] = '\0';
-        const char* value = colon + 1;
-        while (*value == ' ') ++value;
-        esp_http_client_set_header(client, name, value);
-      }
+      const std::string name(extraHeader, colon);
+      const char* value = colon + 1;
+      while (*value == ' ') ++value;
+      http.addHeader(name, std::string(value));
     }
   }
 
-  const size_t bodyLen = body != nullptr ? strlen(body) : 0;
-  int32_t result = CP_HTTP_ERR_TRANSPORT;
-  if (esp_http_client_open(client, bodyLen) == ESP_OK) {
-    bool ok = true;
-    if (bodyLen > 0 && esp_http_client_write(client, body, bodyLen) < 0) ok = false;
-    if (ok && esp_http_client_fetch_headers(client) >= 0) {
-      const int read = esp_http_client_read(client, static_cast<char*>(buf), capacity - 1);
-      const int status = esp_http_client_get_status_code(client);
-      if (read >= 0) {
-        static_cast<char*>(buf)[read] = '\0';
-        // A renderer answers 200 for a control action and 500 with a SOAP
-        // fault otherwise; hand the body back either way so the app can say
-        // what went wrong.
-        result = status >= 200 && status < 300 ? read : CP_HTTP_ERR_TRANSPORT;
-      }
+  const int status = http.POST(body != nullptr ? std::string(body) : std::string());
+  if (status < 0) return CP_HTTP_ERR_TRANSPORT;
+
+  // The body comes back either way: a renderer answers 500 with a SOAP fault,
+  // an LLM endpoint answers 401 with a JSON reason, and both are worth showing
+  // the user. STATUS vs TRANSPORT tells them apart.
+  const std::string& reply = http.getString();
+  auto* out = static_cast<char*>(buf);
+  const size_t copied = reply.size() < capacity - 1 ? reply.size() : capacity - 1;
+  memcpy(out, reply.data(), copied);
+  out[copied] = '\0';
+
+  if (status < 200 || status >= 300) return CP_HTTP_ERR_STATUS;
+  if (copied < reply.size()) return CP_HTTP_ERR_OVERFLOW;
+  return static_cast<int32_t>(copied);
+}
+
+// ---- v1-appended: text entry, shared config, absolute reads -------------
+
+// Text entry is a request the host fulfils between frames; these hold the
+// handshake state. Only one app runs at a time, so a single slot is enough.
+enum class TextInputState : uint8_t { Idle, Requested, Open, Ready, Cancelled };
+TextInputState gTextState = TextInputState::Idle;
+std::string gTextTitle;
+std::string gTextInitial;
+uint32_t gTextMaxLen = 0;
+std::string gTextResult;
+
+int32_t apiTextInputBegin(const char* title, const char* initial, const uint32_t maxLen) {
+  if (gTextState == TextInputState::Requested || gTextState == TextInputState::Open) return 0;
+  gTextTitle = title != nullptr ? title : "";
+  gTextInitial = initial != nullptr ? initial : "";
+  gTextMaxLen = maxLen;
+  gTextResult.clear();
+  gTextState = TextInputState::Requested;
+  return 1;
+}
+
+int32_t apiTextInputResult(char* buf, const uint32_t capacity) {
+  switch (gTextState) {
+    case TextInputState::Ready: {
+      if (buf == nullptr || capacity == 0) return -2;
+      const size_t n = gTextResult.size() < capacity - 1 ? gTextResult.size() : capacity - 1;
+      memcpy(buf, gTextResult.data(), n);
+      buf[n] = '\0';
+      gTextState = TextInputState::Idle;
+      gTextResult.clear();
+      return 1;
     }
-    esp_http_client_close(client);
+    case TextInputState::Cancelled:
+      gTextState = TextInputState::Idle;
+      return -1;
+    case TextInputState::Requested:
+    case TextInputState::Open:
+      return 0;
+    case TextInputState::Idle:
+      break;
   }
-  esp_http_client_cleanup(client);
-  return result;
+  return -2;
+}
+
+bool sharedKeyPath(const char* key, char* out, const size_t cap) {
+  if (key == nullptr || key[0] == '\0') return false;
+  for (const char* p = key; *p; ++p) {
+    const bool ok = (*p >= 'a' && *p <= 'z') || (*p >= '0' && *p <= '9') || *p == '_';
+    if (!ok || p - key >= 40) return false;
+  }
+  const int n = snprintf(out, cap, "/apps/data/_shared/%s.txt", key);
+  return n > 0 && static_cast<size_t>(n) < cap;
+}
+
+int32_t apiSharedGet(const char* key, char* buf, const uint32_t capacity) {
+  char path[96];
+  if (!sharedKeyPath(key, path, sizeof(path)) || buf == nullptr || capacity == 0) return -1;
+  const size_t n = Storage.readFileToBuffer(path, buf, capacity);
+  if (n == 0) {
+    buf[0] = '\0';
+    return 0;
+  }
+  // Values are single-line; drop a trailing newline the editor may have added.
+  size_t len = n < capacity - 1 ? n : capacity - 1;
+  while (len > 0 && (buf[len - 1] == '\n' || buf[len - 1] == '\r')) --len;
+  buf[len] = '\0';
+  return static_cast<int32_t>(len);
+}
+
+int32_t apiSharedSet(const char* key, const char* value) {
+  char path[96];
+  if (!sharedKeyPath(key, path, sizeof(path)) || value == nullptr) return 0;
+  Storage.ensureDirectoryExists("/apps/data/_shared");
+  HalFile f;
+  if (!Storage.openFileForWrite("DYNAPP", path, f)) return 0;
+  const size_t len = strlen(value);
+  return f.write(value, len) == len ? 1 : 0;
+}
+
+int32_t apiFileReadAbs(const char* absPath, const uint32_t offset, void* buf, const uint32_t capacity) {
+  if (absPath == nullptr || buf == nullptr || capacity == 0) return -1;
+  if (absPath[0] != '/' || strstr(absPath, "..") != nullptr) return -1;
+  HalFile f;
+  if (!Storage.openFileForRead("DYNAPP", absPath, f)) return -1;
+  if (offset > 0 && !f.seekSet(offset)) return -1;
+  return f.read(buf, capacity);
 }
 
 int32_t apiMediaPublish(const char* absPath, char* urlOut, const uint32_t capacity) {
@@ -365,19 +449,80 @@ int32_t apiHttpGet(const char* url, void* buf, const uint32_t capacity) {
   return static_cast<int32_t>(written);
 }
 
-// Flash-resident, immutable table. Order MUST match CpApi exactly.
+// Flash-resident, immutable table.
+//
+// Designated initializers on purpose: an ABI append that forgets a slot here
+// leaves a NULL the app cannot detect (it probes `size`, which is always
+// sizeof(CpApi)) and calls straight into address 0. Naming every member makes
+// the omission visible in review; tableIsComplete() catches it anyway.
 constexpr CpApi kApi = {
-    CP_ABI_VERSION, sizeof(CpApi),   apiMillis,      apiDelayMs,    apiRandom,        apiLog,        apiBattery,
-    apiFreeHeap,    apiScreenW,      apiScreenH,     apiClear,      apiPixel,         apiLine,       apiRect,
-    apiFillRect,    apiText,         apiTextWidth,   apiLineHeight, apiFileRead,      apiFileWrite,  apiFileDelete,
-    apiFileExists,  apiTextCentered, apiTextWrapped, apiRtcNow,     apiWifiConnected, apiWifiEnsure, apiHttpGet,
+    .abi_version = CP_ABI_VERSION,
+    .size = sizeof(CpApi),
+
+    .millis = apiMillis,
+    .delay_ms = apiDelayMs,
+    .random_u32 = apiRandom,
+    .log = apiLog,
+    .battery_percent = apiBattery,
+    .free_heap = apiFreeHeap,
+
+    .screen_width = apiScreenW,
+    .screen_height = apiScreenH,
+    .clear_screen = apiClear,
+
+    .draw_pixel = apiPixel,
+    .draw_line = apiLine,
+    .draw_rect = apiRect,
+    .fill_rect = apiFillRect,
+    .draw_text = apiText,
+    .text_width = apiTextWidth,
+    .line_height = apiLineHeight,
+
+    .file_read = apiFileRead,
+    .file_write = apiFileWrite,
+    .file_delete = apiFileDelete,
+    .file_exists = apiFileExists,
+
+    .draw_text_centered = apiTextCentered,
+    .draw_text_wrapped = apiTextWrapped,
+    .rtc_now = apiRtcNow,
+    .wifi_connected = apiWifiConnected,
+    .wifi_ensure = apiWifiEnsure,
+    .http_get = apiHttpGet,
+
+    .dir_list = apiDirList,
+    .ssdp_discover = apiSsdpDiscover,
+    .http_post = apiHttpPost,
+    .media_publish = apiMediaPublish,
+
+    .text_input_begin = apiTextInputBegin,
+    .text_input_result = apiTextInputResult,
+    .shared_get = apiSharedGet,
+    .shared_set = apiSharedSet,
+    .file_read_abs = apiFileReadAbs,
 };
 
+// Every slot past the two leading uint32_t fields is a function pointer, so a
+// forgotten append shows up as a zero word. Generic on purpose: this keeps
+// working for ABI entries that do not exist yet.
+bool tableIsComplete() {
+  const auto* words = reinterpret_cast<const uintptr_t*>(&kApi);
+  const size_t first = (sizeof(uint32_t) * 2) / sizeof(uintptr_t);
+  for (size_t i = first; i < sizeof(CpApi) / sizeof(uintptr_t); ++i) {
+    if (words[i] == 0) {
+      LOG_ERR("DYNAPP", "CpApi slot %u is NULL - ABI table out of sync", static_cast<unsigned>(i));
+      return false;
+    }
+  }
+  return true;
+}
 }  // namespace
 
 namespace dynappapi {
 
 void bind(GfxRenderer& renderer, const std::string& slug) {
+  static const bool complete = tableIsComplete();
+  (void)complete;
   gRenderer = &renderer;
   gDataDir = "/apps/data/" + slug;
   gWifiBroughtUp = false;
@@ -386,6 +531,24 @@ void bind(GfxRenderer& renderer, const std::string& slug) {
 void pumpMediaServer() { gMediaServer.handle(); }
 
 bool isServingMedia() { return gMediaServer.isPublishing(); }
+
+bool takeTextInputRequest(std::string& title, std::string& initial, uint32_t& maxLen) {
+  if (gTextState != TextInputState::Requested) return false;
+  title = gTextTitle;
+  initial = gTextInitial;
+  maxLen = gTextMaxLen;
+  gTextState = TextInputState::Open;
+  return true;
+}
+
+void deliverTextInput(const std::string& text, const bool cancelled) {
+  if (cancelled) {
+    gTextState = TextInputState::Cancelled;
+    return;
+  }
+  gTextResult = text;
+  gTextState = TextInputState::Ready;
+}
 
 void unbind() {
   // Power Wi-Fi down if this app brought it up, mirroring the network apps'
