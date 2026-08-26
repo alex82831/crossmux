@@ -183,6 +183,11 @@ class AchievementsStore {
 
   const AchievementState& getState(AchievementId id) const { return states[indexOf(id)]; }
   const AchievementDefinition& getDefinition(AchievementId id) const;
+  // How many consecutive days the daily goal has been met. Read-only, for the
+  // Standby reading face — the streak is the number worth showing on a lock
+  // screen, and it is otherwise only reachable through the achievements UI.
+  uint32_t getCurrentGoalStreak() const { return currentGoalStreak; }
+
   std::string getTitle(AchievementId id) const;
   std::string getDescription(AchievementId id) const;
 };
