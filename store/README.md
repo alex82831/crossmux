@@ -15,7 +15,8 @@ Manager (应用管理). This directory is the default catalog source
 
 ## What's here
 
-Every former built-in game and tool, now an installable app:
+Every former built-in game and tool, now an installable app, plus the
+DLNA music player:
 
 | slug | 应用 | slug | 应用 |
 |---|---|---|---|
@@ -29,6 +30,7 @@ Every former built-in game and tool, now an installable app:
 | weather | 天气 | poem | 每日诗词 |
 | rss | RSS 速览 | exchange | 汇率 |
 | sysmon | 系统监视器 | life | 生命游戏 |
+| music | 音乐播放器 | | |
 
 ## Building these
 

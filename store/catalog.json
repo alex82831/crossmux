@@ -73,6 +73,14 @@
       "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/minesweeper.eapp"
     },
     {
+      "slug": "music",
+      "name": "音乐播放器",
+      "version": "1.0.0",
+      "bytes": 12728,
+      "note": "SD卡音乐·DLNA投放到音箱/电视",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/music.eapp"
+    },
+    {
       "slug": "poem",
       "name": "每日诗词",
       "version": "1.0.0",

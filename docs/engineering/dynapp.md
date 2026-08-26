@@ -147,6 +147,30 @@ host-side — a bad image fails the build, not the device. Samples: `sysmon`
 (live battery/heap/uptime dashboard) and `life` (Conway, touch-editable,
 state persisted through the sandbox API).
 
+## Playing media without audio hardware
+
+The Xteink boards declare `NO_AUDIO` (`FREEINK_CAP_AUDIO` covers only Murphy
+and M5), and the C3's SoC caps list `SOC_BLE_SUPPORTED` with no Bluetooth
+Classic — so there is no codec to play through and no A2DP for headphones.
+The music app instead runs the classic three-box DLNA model, where the audio
+never touches this chip:
+
+1. `ssdp_discover` M-SEARCHes for `MediaRenderer` devices and the app scrapes
+   each description for its AVTransport `controlURL`.
+2. `media_publish` hands the firmware an absolute SD path. `DynAppMediaServer`
+   (a ~200-line read-only listener on port 8081) starts, and returns the URL a
+   renderer should fetch. Only audio/video extensions are served, only the one
+   currently published path is reachable, and Range requests are answered with
+   206 because renderers seek and resume routinely.
+3. `http_post` carries the SOAP actions (`SetAVTransportURI`, `Play`, `Pause`,
+   `Seek`, `SetVolume`, `GetPositionInfo`) to the renderer, which pulls the
+   track straight off the card.
+
+Two host-side consequences: `DynAppActivity::loop()` pumps the listener each
+frame, and `preventAutoSleep()` reports true while a track is published so the
+idle timer cannot cut a song off mid-stream. The listener and the published
+path are dropped when the app unloads.
+
 The SDK also ships `libapp` (menu, header, hint bar, the standard About
 overlay, JSON scanners) so ports stay compact, and `libmini` adds the
 64-bit-integer and `strchr`/`snprintf` helpers GCC expects. There is no
