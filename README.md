@@ -1,16 +1,16 @@
-# CrossMux
+# FLASHAPPS
 
 **English** | [简体中文](./README.zh-CN.md)
 
-**CrossMux** is a community fork of [CrossPoint Reader](https://github.com/crosspoint-reader/crosspoint-reader) that turns the device into more than a reader — it adds an Apps hub of mini-games and tools, richer standby faces, and a first-class Simplified Chinese build.
+**FLASHAPPS** is a community fork of [CrossPoint Reader](https://github.com/crosspoint-reader/crosspoint-reader) that turns the device into more than a reader — it adds an Apps hub of mini-games and tools, richer standby faces, and a first-class Simplified Chinese build.
 
-**Version:** CrossMux 1.5.7 (based on CrossPoint Reader 1.5.0 plus upstream `develop` through `eef20504`)
+**Version:** FLASHAPPS 1.5.7 (based on CrossPoint Reader 1.5.0 plus upstream `develop` through `eef20504`)
 
 **Now running on:** ESP32C3-based Xteink [X4](https://www.xteink.com/products/xteink-x4) and [X3](https://www.xteink.com/products/xteink-x3).
 
-![CrossMux running on Xteink device](./docs/images/cover.jpg)
+![FLASHAPPS running on Xteink device](./docs/images/cover.jpg)
 
-What CrossMux adds on top of upstream:
+What FLASHAPPS adds on top of upstream:
 
 - **Apps hub** (the `Apps` menu): 2048, Minesweeper, Sudoku, Gomoku (五子棋), Chinese Chess / Xiangqi (象棋), Electronic Woodfish (button or touchscreen knocks with a permanent, lazily checkpointed counter), a procedural "Ugly Avatar" generator, and **AirPage** — scan its QR upload page, then fetch and display BMP or JPEG cloud images manually or through foreground-only live MQTT push. AirPage always opens on the QR page and stays offline until Refresh or live mode needs Wi-Fi; connecting or reconnecting never fetches by itself. The mapped bottom actions open Settings, browse the latest 20 delivered images, or Refresh, with the side keys mirroring image/refresh navigation. Images use the EPUB aspect-fit, centered 4-level grayscale path and can be selected as the custom sleep screen, optionally after every new delivery. Failed refreshes keep the previous image, while repeated live connection failures pause after two minutes so normal auto-sleep can resume. The menu paginates with page dots once the apps overflow a single screen.
 - **WeRead** (微信读书): scan to sign in, browse your shelf, download books, read them offline as EPUBs, and sync reading progress. The reader keeps one **Sync Progress** action: recognized standard WeRead books use WeRead sync, while other EPUBs keep KOReader sync. New WeRead downloads also make a best-effort cloud-progress fetch before caching content so the first open can start at the remote position.
@@ -209,7 +209,7 @@ pio run --target upload
 
 ### Build the Simplified Chinese firmware
 
-CrossMux ships a dedicated Simplified-Chinese build environment, `gh_release_cn`. It produces a Chinese-only firmware: Simplified Chinese UI + i18n, embedded CJK bitmap fonts, CJK-aware EPUB layout, and the Chinese Chess / WeRead apps. A fresh device boots straight into the Chinese UI.
+FLASHAPPS ships a dedicated Simplified-Chinese build environment, `gh_release_cn`. It produces a Chinese-only firmware: Simplified Chinese UI + i18n, embedded CJK bitmap fonts, CJK-aware EPUB layout, and the Chinese Chess / WeRead apps. A fresh device boots straight into the Chinese UI.
 
 The CJK font headers are committed to the repo, so a normal build needs no extra asset steps:
 
@@ -245,7 +245,7 @@ pio run -e simulator_murphy_m4 -t run_simulator
 ```
 
 The simulator is provided by the pinned
-[CrossMux simulator fork](https://github.com/0x1abin/crosspoint-simulator/tree/6058c3da013fbe1579d41c7c5cc77cd466d37f12);
+[FLASHAPPS simulator fork](https://github.com/0x1abin/crosspoint-simulator/tree/6058c3da013fbe1579d41c7c5cc77cd466d37f12);
 its framebuffer, storage, input, network, and screenshot automation run as a
 native PlatformIO dependency.
 

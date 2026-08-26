@@ -2,7 +2,7 @@ _language_name: "Italiano"
 _language_code: "IT"
 _order: "12"
 
-STR_CROSSPOINT: "CrossMux"
+STR_CROSSPOINT: "FLASHAPPS"
 STR_ACCOUNT_CREATED: "Account creato"
 STR_ADD_HIDDEN_NETWORK: "Aggiungi rete nascosta..."
 STR_ADD_SERVER: "Aggiungi server"

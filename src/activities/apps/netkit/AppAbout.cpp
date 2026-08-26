@@ -44,7 +44,7 @@ void drawOverlay(const GfxRenderer& renderer, const char* appTitle) {
   y += lineH10;
   UITheme::drawCenteredText(renderer, screen, UI_10_FONT_ID, y, tr(STR_APP_ABOUT_RIGHTS));
   y += lineH10 + pad;
-  UITheme::drawCenteredText(renderer, screen, SMALL_FONT_ID, y, "CrossMux " CROSSPOINT_VERSION);
+  UITheme::drawCenteredText(renderer, screen, SMALL_FONT_ID, y, "FLASHAPPS " CROSSPOINT_VERSION);
 }
 
 bool AboutGate::handle(MappedInputManager& input, bool& repaint) {

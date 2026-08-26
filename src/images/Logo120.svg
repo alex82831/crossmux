@@ -1,10 +1,7 @@
-<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-  <!-- 开机 logo 单色版（实心黑块）。源文件，生成 src/images/Logo120.h。 -->
-  <!-- 取自 crosspoint-web/public/logo.svg 的 "Mono X" 几何，赤陶->黑、奶油->白。 -->
-  <rect width="64" height="64" rx="15" fill="#000000" />
-  <g stroke="#ffffff" stroke-width="9.5" stroke-linecap="butt">
-    <line x1="17" y1="17" x2="47" y2="47" />
-    <line x1="47" y1="17" x2="17" y2="47" />
-  </g>
-  <rect x="27" y="27" width="10" height="10" rx="1.5" fill="#000000" transform="rotate(45 32 32)" />
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120">
+  <!-- FLASHAPPS mark. Design source for src/images/Logo120.h; keep the
+       geometry in sync with scripts/gen_boot_logo.py, which rasterizes these
+       exact coordinates to 1bpp for the e-ink splash. -->
+  <rect x="5" y="5" width="110" height="110" rx="24" ry="24" fill="#000000"/>
+  <polygon points="73,14 33,66 56,66 47,106 88,52 64,52" fill="#ffffff"/>
 </svg>

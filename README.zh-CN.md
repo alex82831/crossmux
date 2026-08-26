@@ -1,20 +1,20 @@
-# CrossMux
+# FLASHAPPS
 
 [English](./README.md) | **简体中文**
 
-**CrossMux** 是 [CrossPoint Reader](https://github.com/crosspoint-reader/crosspoint-reader) 的社区 fork：在原有电子书阅读体验之上，新增了一个 Apps 应用中心（小游戏 / 小工具）、更丰富的待机表盘，以及一套完整的简体中文固件。
+**FLASHAPPS** 是 [CrossPoint Reader](https://github.com/crosspoint-reader/crosspoint-reader) 的社区 fork：在原有电子书阅读体验之上，新增了一个 Apps 应用中心（小游戏 / 小工具）、更丰富的待机表盘，以及一套完整的简体中文固件。
 
-**版本：** CrossMux 1.5.7（基于 CrossPoint Reader 1.5.0，并同步上游 `develop` 至 `eef20504`）
+**版本：** FLASHAPPS 1.5.7（基于 CrossPoint Reader 1.5.0，并同步上游 `develop` 至 `eef20504`）
 
 **运行设备：** 基于 ESP32-C3 的 Xteink [X4](https://www.xteink.com/products/xteink-x4) 与 [X3](https://www.xteink.com/products/xteink-x3)。
 
-> 本文档面向中文用户，重点说明 CrossMux 的中文相关功能与简体中文固件的编译方式。完整的英文说明请见 [README.md](./README.md)。
+> 本文档面向中文用户，重点说明 FLASHAPPS 的中文相关功能与简体中文固件的编译方式。完整的英文说明请见 [README.md](./README.md)。
 
-![CrossMux 运行在 Xteink 设备上](./docs/images/cover.jpg)
+![FLASHAPPS 运行在 Xteink 设备上](./docs/images/cover.jpg)
 
 ---
 
-## CrossMux 相比上游新增了什么
+## FLASHAPPS 相比上游新增了什么
 
 - **Apps 应用中心**（首页的 `Apps` 菜单）：2048、扫雷、数独、五子棋、中国象棋、电子木鱼（支持按键与触屏敲击，累计值永久保留并惰性写盘）、「Ugly Avatar」头像生成器，以及 **AirPage**——扫码上传自定义内容，再通过手动刷新或仅前台运行的 MQTT 实时推送获取并全屏显示 BMP 或 JPEG 图片。AirPage 每次均从二维码页进入，并在刷新或实时模式需要联网时才连接 Wi‑Fi；连接或重连本身不会下载。底部映射按键可进入设置、浏览最近 20 张投送图片或刷新，侧键同步对应图片/刷新操作。图片复用 EPUB 的等比居中与 4 级灰度链路，可手动设为自定义休眠画面，也可在 AirPage 设置中开启“每次投送后自动设置”。刷新失败保留原图，实时连接连续失败约两分钟后暂停并恢复系统自动休眠。应用超过一屏时以页点分页。
 - **微信读书**：扫码登录、浏览个人书架、下载图书、以 EPUB 离线阅读并同步阅读进度。阅读器只保留一个「同步进度」入口：识别出的标准微信书籍优先同步微信读书，其他 EPUB 仍同步 KOReader。新缓存的微信书籍还会在下载正文前尽力预取云端进度，首次打开时可从云端位置继续阅读。
@@ -33,13 +33,13 @@
 > 中间人攻击风险；请只在可信网络中使用。原生模拟器仍通过 libcurl 的主机信任库
 > 验证证书。
 
-上游 CrossPoint 的全部能力（EPUB 2/3 渲染、多格式支持、无线传书、OPDS、OTA 等）在 CrossMux 中同样可用，详见 [English README](./README.md#what-can-crosspoint-do)。
+上游 CrossPoint 的全部能力（EPUB 2/3 渲染、多格式支持、无线传书、OPDS、OTA 等）在 FLASHAPPS 中同样可用，详见 [English README](./README.md#what-can-crosspoint-do)。
 
 ---
 
 ## 编译简体中文固件
 
-CrossMux 提供一个专用的简体中文构建环境 `gh_release_cn`，产出**仅中文**的固件：简体中文 UI + i18n、内嵌 CJK 点阵字体、面向中文的 EPUB 排版，以及中国象棋 / 微信读书等应用。全新设备首次开机即直接进入中文界面。
+FLASHAPPS 提供一个专用的简体中文构建环境 `gh_release_cn`，产出**仅中文**的固件：简体中文 UI + i18n、内嵌 CJK 点阵字体、面向中文的 EPUB 排版，以及中国象棋 / 微信读书等应用。全新设备首次开机即直接进入中文界面。
 
 ### 前置条件
 
@@ -157,7 +157,7 @@ pio run -e default
 ```
 
 安装 SDL2 与 `curl`（Linux 还需 OpenSSL 开发头文件）后，可把 EPUB 放入
-`fs_/books/`，再运行 CrossMux 使用的桌面模拟器：
+`fs_/books/`，再运行 FLASHAPPS 使用的桌面模拟器：
 
 ```bash
 # X4
@@ -174,7 +174,7 @@ pio run -e simulator_murphy_m4 -t run_simulator
 ```
 
 模拟器由固定版本的
-[CrossMux simulator fork](https://github.com/0x1abin/crosspoint-simulator/tree/6058c3da013fbe1579d41c7c5cc77cd466d37f12)
+[FLASHAPPS simulator fork](https://github.com/0x1abin/crosspoint-simulator/tree/6058c3da013fbe1579d41c7c5cc77cd466d37f12)
 作为原生 PlatformIO 依赖提供。
 
 调试日志（先 `python3 -m pip install pyserial colorama matplotlib`）：
@@ -190,6 +190,6 @@ python3 scripts/debugging_monitor.py /dev/cu.usbmodem2101
 
 ---
 
-CrossMux / CrossPoint Reader **与 Xteink 及任何设备厂商均无隶属关系**。
+FLASHAPPS / CrossPoint Reader **与 Xteink 及任何设备厂商均无隶属关系**。
 
 特别感谢 [diy-esp32-epub-reader](https://github.com/atomic14/diy-esp32-epub-reader) 项目的启发，以及上游 [CrossPoint Reader](https://github.com/crosspoint-reader/crosspoint-reader) 社区。
