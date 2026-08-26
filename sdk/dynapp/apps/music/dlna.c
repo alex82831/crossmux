@@ -83,11 +83,21 @@ static void xml_escape(const char* in, char* out, int cap) {
   int n = 0;
   for (const char* p = in; *p && n < cap - 7; ++p) {
     switch (*p) {
-      case '&': for (const char* e = "&amp;"; *e; ++e) out[n++] = *e; break;
-      case '<': for (const char* e = "&lt;"; *e; ++e) out[n++] = *e; break;
-      case '>': for (const char* e = "&gt;"; *e; ++e) out[n++] = *e; break;
-      case '"': for (const char* e = "&quot;"; *e; ++e) out[n++] = *e; break;
-      default: out[n++] = *p; break;
+      case '&':
+        for (const char* e = "&amp;"; *e; ++e) out[n++] = *e;
+        break;
+      case '<':
+        for (const char* e = "&lt;"; *e; ++e) out[n++] = *e;
+        break;
+      case '>':
+        for (const char* e = "&gt;"; *e; ++e) out[n++] = *e;
+        break;
+      case '"':
+        for (const char* e = "&quot;"; *e; ++e) out[n++] = *e;
+        break;
+      default:
+        out[n++] = *p;
+        break;
     }
   }
   out[n] = 0;
@@ -141,8 +151,8 @@ static int resolve(const CpApi* api, const char* location, DlnaRenderer* out) {
 
 int dlna_discover(const CpApi* api, DlnaRenderer* out, const int cap, const uint32_t timeout_ms) {
   if (!api->wifi_ensure(15000)) return 0;
-  const int n = api->ssdp_discover("urn:schemas-upnp-org:device:MediaRenderer:1", timeout_ms, g_scratch,
-                                   sizeof(g_scratch) - 1);
+  const int n =
+      api->ssdp_discover("urn:schemas-upnp-org:device:MediaRenderer:1", timeout_ms, g_scratch, sizeof(g_scratch) - 1);
   if (n <= 0) return 0;
   g_scratch[n] = 0;
 

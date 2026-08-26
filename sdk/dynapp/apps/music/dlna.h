@@ -18,9 +18,9 @@
 #define DLNA_URL_LEN 160
 
 typedef struct {
-  char name[DLNA_NAME_LEN];      // friendlyName from the device description
-  char controlUrl[DLNA_URL_LEN]; // absolute AVTransport control URL
-  char baseUrl[DLNA_URL_LEN];    // scheme://host:port of the renderer
+  char name[DLNA_NAME_LEN];       // friendlyName from the device description
+  char controlUrl[DLNA_URL_LEN];  // absolute AVTransport control URL
+  char baseUrl[DLNA_URL_LEN];     // scheme://host:port of the renderer
 } DlnaRenderer;
 
 // Discover MediaRenderers. Returns how many were resolved into `out`.

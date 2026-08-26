@@ -1,6 +1,46 @@
 {
   "apps": [
     {
+      "slug": "aibook",
+      "name": "读书伴侣",
+      "version": "1.0.0",
+      "bytes": 16944,
+      "note": "读到哪问到哪·零输入",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/aibook.eapp"
+    },
+    {
+      "slug": "aichat",
+      "name": "AI 助手",
+      "version": "1.0.0",
+      "bytes": 16548,
+      "note": "一触即问·配置中心",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/aichat.eapp"
+    },
+    {
+      "slug": "aidict",
+      "name": "AI 词典",
+      "version": "1.0.0",
+      "bytes": 15664,
+      "note": "查过即存·离线复习",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/aidict.eapp"
+    },
+    {
+      "slug": "ailesson",
+      "name": "每日一课",
+      "version": "1.0.0",
+      "bytes": 16428,
+      "note": "零输入·每天一张卡",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/ailesson.eapp"
+    },
+    {
+      "slug": "ainote",
+      "name": "灵感整理",
+      "version": "1.0.0",
+      "bytes": 16368,
+      "note": "随手记·AI 理成提纲",
+      "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/ainote.eapp"
+    },
+    {
       "slug": "avatar",
       "name": "头像生成器",
       "version": "1.0.0",
@@ -75,7 +115,7 @@
     {
       "slug": "music",
       "name": "音乐播放器",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "bytes": 12728,
       "note": "SD卡音乐·DLNA投放到音箱/电视",
       "url": "https://raw.githubusercontent.com/alex82831/crossmux/claude/project-research-firmware-build-xb63d3/store/music.eapp"

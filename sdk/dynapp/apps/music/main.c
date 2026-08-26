@@ -17,8 +17,8 @@ enum { V_LIST, V_RENDERERS, V_PLAYER };
 
 static char g_tracks[MAX_TRACKS][NAME_LEN];
 static int g_trackCount;
-static int g_sel;          // cursor in the track list
-static int g_playing = -1; // index of the track handed to the renderer
+static int g_sel;           // cursor in the track list
+static int g_playing = -1;  // index of the track handed to the renderer
 
 static DlnaRenderer g_renderers[DLNA_MAX_RENDERERS];
 static int g_rendererCount;
@@ -52,7 +52,10 @@ static int has_music_ext(const char* name) {
     for (int i = 0; i < el; ++i) {
       char a = name[n - el + i], b = exts[e][i];
       if (a >= 'A' && a <= 'Z') a = (char)(a - 'A' + 'a');
-      if (a != b) { match = 0; break; }
+      if (a != b) {
+        match = 0;
+        break;
+      }
     }
     if (match) return 1;
   }
