@@ -17,8 +17,8 @@
 #include "activities/apps/appmgr/DynAppRegistry.h"
 #include "activities/util/ConfirmationActivity.h"
 #include "activities/util/KeyboardEntryActivity.h"
-#include "components/UiAppHelpers.h"
 #include "components/UITheme.h"
+#include "components/UiAppHelpers.h"
 #include "fontIds.h"
 #include "util/FileOps.h"
 
@@ -127,7 +127,7 @@ void FileManagerActivity::rebuildRows() {
     UIIcon icon = UIIcon::Folder;
     if (!isParent) {
       const Entry& entry = entries_[entryIndexFor(static_cast<int>(i))];
-      icon = entry.isDir            ? UIIcon::Folder
+      icon = entry.isDir              ? UIIcon::Folder
              : isEappName(entry.name) ? UIIcon::AppStore
                                       : UITheme::getFileIcon(entry.name);
     }
@@ -317,7 +317,7 @@ void FileManagerActivity::showItemMenu(const int entryIndex) {
   const Entry& entry = entries_[entryIndex];
   if (FsHelpers::isProtectedPathComponent(entry.name)) return;
 
-  const char* openLabel = entry.isDir           ? tr(STR_FILEMGR_ENTER)
+  const char* openLabel = entry.isDir              ? tr(STR_FILEMGR_ENTER)
                           : isEappName(entry.name) ? tr(STR_FILEMGR_INSTALL)
                                                    : tr(STR_FILEMGR_OPEN);
   notice_.clear();
@@ -334,8 +334,10 @@ void FileManagerActivity::runItemAction(const int entryIndex, const ItemAction a
 
   switch (action) {
     case ItemAction::Open:
-      if (entry.isDir) navigateTo(full);
-      else openEntry(entry);
+      if (entry.isDir)
+        navigateTo(full);
+      else
+        openEntry(entry);
       return;
     case ItemAction::Copy:
       clipPath_ = full;

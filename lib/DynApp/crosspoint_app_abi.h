@@ -132,6 +132,35 @@ typedef struct CpApi {
   int32_t (*wifi_connected)(void);
   int32_t (*wifi_ensure)(uint32_t timeout_ms);
   int32_t (*http_get)(const char* url, void* buf, uint32_t capacity);
+
+  // ---- Appended again, size-probed: LAN media control ----
+  // Enough to be a DLNA/UPnP control point. The device cannot play audio
+  // itself (no codec on these boards, and the C3 has no Bluetooth Classic so
+  // no A2DP either) — it discovers a renderer on the LAN, serves the track,
+  // and drives playback.
+
+  // Read-only listing of an absolute SD path (outside the app's sandbox, so
+  // a player can browse /music). Writes newline-separated records into `buf`:
+  //     name \t size \t D|F
+  // Returns bytes written (excluding the terminator), or negative on error.
+  int32_t (*dir_list)(const char* abs_path, char* buf, uint32_t capacity);
+
+  // SSDP M-SEARCH on 239.255.255.250:1900. Collects responses until
+  // timeout_ms elapses and writes them back-to-back into `buf`. Returns bytes
+  // written, or negative on error. Parse the LOCATION headers yourself.
+  int32_t (*ssdp_discover)(const char* search_target, uint32_t timeout_ms, char* buf, uint32_t capacity);
+
+  // HTTP POST with an explicit content type and one optional extra header
+  // (SOAPAction, for UPnP). Returns bytes of the response body, or a negative
+  // CpHttpError.
+  int32_t (*http_post)(const char* url, const char* content_type, const char* extra_header, const char* body, void* buf,
+                       uint32_t capacity);
+
+  // Publish one media file on the LAN and write the URL a renderer should
+  // fetch into `url_out`. Starts the device's media listener on first use and
+  // keeps the file reachable until the next call. Only audio/video types are
+  // accepted. Returns 1 on success, 0 on refusal (no link, bad type, missing).
+  int32_t (*media_publish)(const char* abs_path, char* url_out, uint32_t capacity);
 } CpApi;
 
 // http_get error codes (negative returns).

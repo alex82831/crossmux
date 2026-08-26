@@ -9,6 +9,8 @@
 #include <HalStorage.h>
 #include <Logging.h>
 #include <WiFi.h>
+#include <WiFiUdp.h>
+#include <esp_http_client.h>
 #include <esp_random.h>
 #include <esp_system.h>
 
@@ -16,6 +18,7 @@
 #include <ctime>
 
 #include "CrossPointSettings.h"
+#include "DynAppMediaServer.h"
 #include "WifiCredentialStore.h"
 #include "activities/apps/netkit/NetKit.h"
 #include "components/UITheme.h"
@@ -25,8 +28,9 @@
 namespace {
 
 GfxRenderer* gRenderer = nullptr;
-std::string gDataDir;         // "/apps/data/<slug>" — set while an app is bound
-bool gWifiBroughtUp = false;  // app called wifi_ensure(); tear down on unbind
+std::string gDataDir;            // "/apps/data/<slug>" — set while an app is bound
+bool gWifiBroughtUp = false;     // app called wifi_ensure(); tear down on unbind
+DynAppMediaServer gMediaServer;  // serves one published track to a LAN renderer
 
 int mapFont(const int32_t font) {
   switch (font) {
@@ -210,6 +214,137 @@ int32_t apiWifiEnsure(const uint32_t timeoutMs) {
   return netkit::wifiConnected() ? 1 : 0;
 }
 
+// ---- v1-appended: LAN media control -------------------------------------
+
+int32_t apiDirList(const char* absPath, char* buf, const uint32_t capacity) {
+  if (absPath == nullptr || buf == nullptr || capacity == 0) return -1;
+  if (absPath[0] != '/' || strstr(absPath, "..") != nullptr) return -1;
+  auto dir = Storage.open(absPath);
+  if (!dir || !dir.isDirectory()) return -2;
+  dir.rewindDirectory();
+
+  uint32_t used = 0;
+  char name[160];
+  for (auto entry = dir.openNextFile(); entry; entry = dir.openNextFile()) {
+    if (entry.getName(name, sizeof(name)) == 0) continue;
+    if (name[0] == '.') continue;
+    const bool isDir = entry.isDirectory();
+    const unsigned size = isDir ? 0 : static_cast<unsigned>(entry.fileSize());
+    char row[224];
+    const int n = snprintf(row, sizeof(row), "%s\t%u\t%c\n", name, size, isDir ? 'D' : 'F');
+    if (n <= 0) continue;
+    if (used + static_cast<uint32_t>(n) >= capacity) break;  // caller's buffer decides the cap
+    memcpy(buf + used, row, static_cast<size_t>(n));
+    used += static_cast<uint32_t>(n);
+  }
+  dir.close();
+  buf[used] = '\0';
+  return static_cast<int32_t>(used);
+}
+
+int32_t apiSsdpDiscover(const char* searchTarget, const uint32_t timeoutMs, char* buf, const uint32_t capacity) {
+  if (searchTarget == nullptr || buf == nullptr || capacity == 0) return -1;
+  if (!netkit::wifiConnected()) return CP_HTTP_ERR_NO_WIFI;
+
+  WiFiUDP udp;
+  if (udp.begin(0) == 0) return -2;  // ephemeral local port
+  char request[256];
+  const int reqLen = snprintf(request, sizeof(request),
+                              "M-SEARCH * HTTP/1.1\r\n"
+                              "HOST: 239.255.255.250:1900\r\n"
+                              "MAN: \"ssdp:discover\"\r\n"
+                              "MX: 2\r\n"
+                              "ST: %s\r\n\r\n",
+                              searchTarget);
+  const IPAddress group(239, 255, 255, 250);
+  // Renderers answer unicast; a couple of probes covers a dropped datagram.
+  for (int attempt = 0; attempt < 2; ++attempt) {
+    udp.beginPacket(group, 1900);
+    udp.write(reinterpret_cast<const uint8_t*>(request), static_cast<size_t>(reqLen));
+    udp.endPacket();
+    delay(30);
+  }
+
+  uint32_t used = 0;
+  const uint32_t deadline = millis() + timeoutMs;
+  while (millis() < deadline && used + 1 < capacity) {
+    const int packetSize = udp.parsePacket();
+    if (packetSize <= 0) {
+      delay(20);
+      continue;
+    }
+    const uint32_t room = capacity - used - 1;
+    const int got = udp.read(buf + used, room);
+    if (got > 0) used += static_cast<uint32_t>(got);
+  }
+  udp.stop();
+  buf[used] = '\0';
+  return static_cast<int32_t>(used);
+}
+
+// UPnP control is plain HTTP on the LAN, so this goes straight to
+// esp_http_client rather than through HttpDownloader's wolfSSL path — no
+// reason to touch the reader's download code for a SOAP call.
+int32_t apiHttpPost(const char* url, const char* contentType, const char* extraHeader, const char* body, void* buf,
+                    const uint32_t capacity) {
+  if (url == nullptr || buf == nullptr || capacity == 0) return CP_HTTP_ERR_ARGS;
+  if (!netkit::wifiConnected()) return CP_HTTP_ERR_NO_WIFI;
+
+  esp_http_client_config_t cfg = {};
+  cfg.url = url;
+  cfg.method = HTTP_METHOD_POST;
+  cfg.timeout_ms = 8000;
+  esp_http_client_handle_t client = esp_http_client_init(&cfg);
+  if (client == nullptr) return CP_HTTP_ERR_TRANSPORT;
+
+  esp_http_client_set_header(client, "Content-Type",
+                             contentType != nullptr ? contentType : "text/xml; charset=\"utf-8\"");
+  // One optional "Name: value" header (SOAPAction for UPnP).
+  if (extraHeader != nullptr && extraHeader[0] != '\0') {
+    const char* colon = strchr(extraHeader, ':');
+    if (colon != nullptr) {
+      char name[64];
+      const size_t nameLen = static_cast<size_t>(colon - extraHeader);
+      if (nameLen < sizeof(name)) {
+        memcpy(name, extraHeader, nameLen);
+        name[nameLen] = '\0';
+        const char* value = colon + 1;
+        while (*value == ' ') ++value;
+        esp_http_client_set_header(client, name, value);
+      }
+    }
+  }
+
+  const size_t bodyLen = body != nullptr ? strlen(body) : 0;
+  int32_t result = CP_HTTP_ERR_TRANSPORT;
+  if (esp_http_client_open(client, bodyLen) == ESP_OK) {
+    bool ok = true;
+    if (bodyLen > 0 && esp_http_client_write(client, body, bodyLen) < 0) ok = false;
+    if (ok && esp_http_client_fetch_headers(client) >= 0) {
+      const int read = esp_http_client_read(client, static_cast<char*>(buf), capacity - 1);
+      const int status = esp_http_client_get_status_code(client);
+      if (read >= 0) {
+        static_cast<char*>(buf)[read] = '\0';
+        // A renderer answers 200 for a control action and 500 with a SOAP
+        // fault otherwise; hand the body back either way so the app can say
+        // what went wrong.
+        result = status >= 200 && status < 300 ? read : CP_HTTP_ERR_TRANSPORT;
+      }
+    }
+    esp_http_client_close(client);
+  }
+  esp_http_client_cleanup(client);
+  return result;
+}
+
+int32_t apiMediaPublish(const char* absPath, char* urlOut, const uint32_t capacity) {
+  if (absPath == nullptr || urlOut == nullptr || capacity == 0) return 0;
+  const std::string url = gMediaServer.publish(absPath);
+  if (url.empty() || url.size() + 1 > capacity) return 0;
+  memcpy(urlOut, url.c_str(), url.size() + 1);
+  return 1;
+}
+
 int32_t apiHttpGet(const char* url, void* buf, const uint32_t capacity) {
   if (url == nullptr || buf == nullptr || capacity == 0) return CP_HTTP_ERR_ARGS;
   if (!netkit::wifiConnected()) return CP_HTTP_ERR_NO_WIFI;
@@ -248,9 +383,14 @@ void bind(GfxRenderer& renderer, const std::string& slug) {
   gWifiBroughtUp = false;
 }
 
+void pumpMediaServer() { gMediaServer.handle(); }
+
+bool isServingMedia() { return gMediaServer.isPublishing(); }
+
 void unbind() {
   // Power Wi-Fi down if this app brought it up, mirroring the network apps'
   // exit behavior so a dynamic app never leaves the radio on.
+  gMediaServer.stop();  // drop the published track and the listener
   if (gWifiBroughtUp) {
     netkit::teardownWifi();
     gWifiBroughtUp = false;

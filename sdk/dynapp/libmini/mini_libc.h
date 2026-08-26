@@ -15,6 +15,7 @@ void* memmove(void* dst, const void* src, size_t n);
 int memcmp(const void* a, const void* b, size_t n);
 size_t strlen(const char* s);
 char* strchr(const char* s, int c);
+int strcmp(const char* a, const char* b);
 
 // Minimal snprintf: %d %u %x %s %c %% with optional zero-pad width.
 int cp_snprintf(char* out, unsigned cap, const char* fmt, ...);

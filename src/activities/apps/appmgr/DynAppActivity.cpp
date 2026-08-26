@@ -75,6 +75,8 @@ uint32_t DynAppActivity::buildHeldMask() const {
   return mask;
 }
 
+bool DynAppActivity::preventAutoSleep() { return dynappapi::isServingMedia(); }
+
 void DynAppActivity::loop() {
   if (exiting_) return;
 
@@ -122,6 +124,10 @@ void DynAppActivity::loop() {
     input.touch_x = -1;
     input.touch_y = -1;
   }
+
+  // Serve a LAN renderer pulling a track the app published (music player).
+  // No-op unless something is published.
+  dynappapi::pumpMediaServer();
 
   const uint32_t flags = loader_.app()->on_loop(dynappapi::table(), &input);
   if (flags & CP_LOOP_EXIT) {

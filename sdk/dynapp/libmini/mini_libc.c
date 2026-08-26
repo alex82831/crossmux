@@ -229,3 +229,11 @@ long long __moddi3(long long a, long long b) {
   __udivmoddi4(ua, ub, &r);
   return a < 0 ? -(long long)r : (long long)r;
 }
+
+int strcmp(const char* a, const char* b) {
+  while (*a && *a == *b) {
+    ++a;
+    ++b;
+  }
+  return (int)(unsigned char)*a - (int)(unsigned char)*b;
+}

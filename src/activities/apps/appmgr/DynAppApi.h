@@ -19,6 +19,14 @@ namespace dynappapi {
 void bind(GfxRenderer& renderer, const std::string& slug);
 void unbind();
 
+// Pumped by the host activity each loop so a LAN renderer's pull of the
+// published track gets served. Cheap when nothing is published.
+void pumpMediaServer();
+
+// True while a track is published to a LAN renderer. The host reports this as
+// preventAutoSleep() so the idle timer cannot cut a song off mid-stream.
+bool isServingMedia();
+
 const CpApi* table();
 
 }  // namespace dynappapi

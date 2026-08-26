@@ -20,6 +20,8 @@ class DynAppActivity final : public Activity {
   void onEnter() override;
   void onExit() override;
   void loop() override;
+  // A renderer streaming a published track keeps the device awake.
+  bool preventAutoSleep() override;
   void render(RenderLock&&) override;
 
  private:
