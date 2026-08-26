@@ -186,5 +186,142 @@ Wi-Fi down when a network app exits.
 
 Constraints for app authors: C only (no C++ runtime), no libc beyond the
 SDK mini-libc/libapp, no floating point, static + stack memory only (no malloc
-in v1), image ≤ 96 KB, `on_loop` must return promptly (the watchdog is the
-firmware's), and all firmware access through the passed `CpApi` pointer.
+in v1), image ≤ 96 KB, and all firmware access through the passed `CpApi`
+pointer.
+
+`on_loop` should return promptly, with one documented exception: a *blocking
+socket read* is safe for as long as the server takes. Nothing is subscribed to
+the task watchdog on this build (`CONFIG_ESP_TASK_WDT_TIMEOUT_S=5`,
+`PANIC=y`, but `CHECK_IDLE_TASK_CPU0` unset), and a blocking read yields the
+CPU, so the idle task keeps running — which is why multi-MB OTA downloads
+already work. A 30-second LLM call is fine; a 30-second busy-loop is a reset.
+
+## Appended ABI: text entry, shared config, absolute reads
+
+The fourth appended block is what an app needs to talk to a cloud service
+from a device with no keyboard:
+
+* `text_input_begin` / `text_input_result` — the host's on-screen keyboard.
+  An app cannot block waiting for typing, so this is request-then-poll:
+  `begin()` once, return `CP_LOOP_IDLE`, then `result()` each frame (1 ready,
+  0 still open, -1 cancelled, -2 nothing requested). `DynAppActivity::loop()`
+  picks the request up before calling `on_loop` and pushes
+  `KeyboardEntryActivity`. **Push does not call `onExit`** (only Replace
+  does, `ActivityManager.cpp:187`), so the `.eapp` stays loaded and its state
+  is exactly where it was when the keyboard closes. `maxLength` counts
+  *bytes*, not characters.
+* `shared_get` / `shared_set` — a cross-app key/value store under
+  `/apps/data/_shared/`, keys `[a-z0-9_]`. Deliberately *not* sandboxed per
+  app: an API key typed once on an e-reader should work everywhere. This is
+  the one place apps are allowed to share state.
+* `file_read_abs` — read-only access to an absolute SD path with an `offset`,
+  so an app can page through a file far larger than RAM (`..` rejected).
+* `CP_HTTP_ERR_STATUS` (-5) joins the `http_*` error codes: the server
+  answered but not with 2xx, and `buf` still holds the body — which is where
+  an API puts the actual reason (bad key, no quota). Distinguishing it from a
+  dead socket is the difference between a useful error and "failed".
+
+`http_post` now reads the response with `esp_http_client_read_response()`.
+A single `esp_http_client_read()` returns one TCP segment, which silently
+truncated anything over an MTU — fine for a SOAP ack, wrong for a multi-KB
+answer.
+
+### The CpApi table must be complete
+
+`kApi` is built with **designated initializers**, and `tableIsComplete()`
+scans it for NULL slots on every `bind()`. This is not ceremony. An ABI
+append that adds members to `CpApi` but forgets to add them to the table
+leaves NULLs that no app can detect — `CpApi.size` is `sizeof(CpApi)`, so
+size-probing reports the entries as present — and the app calls straight
+into address 0. That shipped once: the table stopped at `apiHttpGet` while
+the struct had grown through `media_publish`, so the music app's
+`ssdp_discover` call was a NULL dereference. Naming every member makes the
+omission visible in review; the scan catches it regardless, including for
+entries that do not exist yet.
+
+## AI apps
+
+No local model is possible on 380 KB of RAM, so the AI apps call an
+OpenAI-compatible `/chat/completions` endpoint — the shape DeepSeek, 智谱,
+月之暗面, 通义千问, OpenAI and a LAN-local llama.cpp/Ollama server all speak.
+The provider is the user's choice; nothing is hard-wired to a vendor.
+
+The design constraint that matters is not the model, it is the keyboard.
+Typing on an e-reader is painful, so a general-purpose chatbot is close to
+the *worst* fit for this device. The apps that work here either need almost
+no typing, or operate on content already on the card:
+
+| App | Typing | What it does |
+|---|---|---|
+| AI 助手 (`aichat`) | one line, or none | Hub + config owner. One-tap prompts, several needing no typing at all; follow-ups keep context. |
+| AI 词典 (`aidict`) | one word | Fixed-format word card, saved to the card. The saved list is an offline flashcard deck built from your own reading. |
+| 每日一课 (`ailesson`) | none | One lesson a day. Past titles go back as context, so it is a curriculum rather than a shuffle; cached, so re-reading is free and offline. |
+| 读书伴侣 (`aibook`) | none | Page a `.txt`/`.md` off the card, then ask about *this passage*: explain, summarise, discussion questions, who-is-who, hard words. |
+| 灵感整理 (`ainote`) | one short line | Dated jottings; on demand the pile becomes an outline, an action list, or the theme you have been circling. |
+
+EPUB is deliberately absent from `aibook`: it is a ZIP container, and
+inflate does not belong in a bare-C `.eapp` with no libc.
+
+### libai
+
+`sdk/dynapp/libai` is opt-in — `build-eapp.sh` links it only for apps whose
+sources `#include "ai.h"`, because it carries ~16 KB of `.bss` (request
+5 KB, response 8 KB, extracted answer 3 KB) and the other apps should not
+pay for it. It provides:
+
+* **Config** in the shared store (`ai_url`, `ai_key`, `ai_model`,
+  `ai_lang`), plus `ai_endpoint()` so a settings screen can show the URL
+  that will really be POSTed — "why do I get 404" is almost always a
+  `base_url` that lost its `/v1`.
+* **`AiJob`**, a two-phase call. `ai_job_start()` queues; the app returns
+  `CP_LOOP_RENDER` so the "thinking" panel is *on the panel* before
+  `ai_job_pump()` blocks for 20-40 s. `ai_job_settled()` swallows the frame
+  after, so a button pressed during the wait cannot act on the screen that
+  replaced the busy panel.
+* **JSON** build-with-escaping and a real unescaper. `app_json_str()` drops
+  the backslash and keeps the letter, which turns every newline in an answer
+  into a literal `n`; `libai` decodes `\n`, `\uXXXX` and surrogate pairs.
+  It scopes the answer search to `"choices"` and matches `"content"` *with*
+  its opening quote, so a provider that also returns `"reasoning_content"`
+  cannot be mistaken for the answer.
+* **`AiPager`**, laid out once into line offsets and then paged — no reflow
+  per frame. Latin wraps at spaces, CJK breaks anywhere, and per-glyph
+  advances are summed (exact for bitmap fonts) with an ASCII width cache.
+* **`ai_scratch()`**, lending the request buffer back to the app between
+  calls, so rewriting an index file costs no second multi-KB buffer.
+
+`libapp` gained `AppList`, a scrolling list with a scrollbar, for the screens
+that outgrew `app_menu_draw`'s fixed eight rows.
+
+### Privacy and cost
+
+Both are the user's to weigh, so both are stated plainly rather than buried:
+
+* The API key is stored **in plain text** on the SD card, at
+  `/apps/data/_shared/ai_key.txt`. Anyone who can read the card can read the
+  key. Use a key you can revoke.
+* Prompts leave the device. Whatever you send — a word, a book passage, your
+  notes — goes to the provider you configured, under their retention policy.
+  The transport is HTTPS, but **the server is not authenticated** — the
+  wolfSSL transport has no CA bundle wired up, so this matches every other
+  request the device makes (OPDS, WeRead, catalog and OTA downloads). It is
+  encrypted against a passive listener, not against an active
+  man-in-the-middle. Getting real verification would mean linking mbedTLS as
+  a second TLS stack: measured at +193KB of flash, on a build already past
+  90%. Use an API key you can revoke, and prefer a network you trust.
+* Every call costs money at the provider. The apps are built to minimise
+  that: answers are capped by `max_tokens`, `aidict` never re-queries a word
+  it already has, and `ailesson` calls once per day and reads from the card
+  afterwards.
+
+## Building the whole store
+
+```bash
+./sdk/dynapp/build-store.sh              # every app → store/ + catalog.json
+./sdk/dynapp/build-store.sh aichat       # just one, catalog refreshed
+```
+
+`store/catalog.json` is **generated, not hand-edited**. Each app carries its
+own `app.meta` (`name` / `version` / `note`) and the byte count is read off
+the built file, so a stale size can no longer ship. `CROSSMUX_STORE_BASE`
+overrides the download prefix.
