@@ -24,6 +24,8 @@ class AppManagerActivity final : public UiListActivity {
   static constexpr int kActionCatalog = 1000;
   static constexpr int kActionBrowserHint = 1001;
   static constexpr int kActionBuiltinVisibility = 1002;
+  static constexpr int kActionInstallFromDisk = 1003;
+  static constexpr int kActionCatalogServer = 1004;
 
   int listCount() const override { return rowCount_; }
   void buildScreen(UiScreen& screen) override;
@@ -40,6 +42,8 @@ class AppManagerActivity final : public UiListActivity {
   void runApp(const char* slug);
   void installEntry(int catalogIndex);
   void showBlockingStatus(const char* line1, const char* line2);
+  void pickFromDisk();
+  void editCatalogServer();
 
   Mode mode_ = Mode::Installed;
 

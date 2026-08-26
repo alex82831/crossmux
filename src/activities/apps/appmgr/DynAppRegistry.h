@@ -45,8 +45,17 @@ bool uninstall(const char* slug);  // removes image, version tag and data
 bool clearData(const char* slug);  // removes only /apps/data/<slug>/
 const char* installedVersion(const InstalledApp* apps, int count, const char* slug);
 
+// Installs `srcPath` (a .eapp anywhere on the card) as /apps/<slug>.eapp,
+// where the slug is the file's stem. A file already in /apps is a no-op.
+// No version tag is written: a hand-installed image has no known version.
+bool installFromFile(const std::string& srcPath, std::string& err);
+
 // ---- Online catalog ----------------------------------------------------
 std::string catalogUrl();
+// The built-in catalog URL, used when no override is stored.
+std::string defaultCatalogUrl();
+// Stores (or, given an empty string, clears) the /apps/catalog.url override.
+bool setCatalogUrl(const std::string& url);
 // Fetches and parses the catalog. Returns entry count, or -1 with `err` set.
 // A successful fetch also refreshes the /apps/catalog.json cache.
 int fetchCatalog(CatalogEntry* out, int cap, std::string& err);

@@ -10,9 +10,11 @@
 
 #include "MappedInputManager.h"
 #include "activities/ActivityManager.h"
+#include "activities/apps/filemgr/FileManagerActivity.h"
 #include "activities/apps/netkit/NetKit.h"
 #include "activities/network/WifiSelectionActivity.h"
 #include "activities/settings/AppVisibilitySettingsActivity.h"
+#include "activities/util/KeyboardEntryActivity.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
 
@@ -104,12 +106,29 @@ void AppManagerActivity::rebuildInstalledRows() {
   rowItems_[row].actionValue = kActionCatalog;
   ++row;
 
+  rowTitles_[row] = tr(STR_APPMGR_INSTALL_FROM_DISK);
+  rowSubtitles_[row] = tr(STR_APPMGR_INSTALL_FROM_DISK_SUB);
+  rowItems_[row] = {};
+  rowItems_[row].label = rowTitles_[row].c_str();
+  rowItems_[row].subtitle = rowSubtitles_[row].c_str();
+  rowItems_[row].actionValue = kActionInstallFromDisk;
+  ++row;
+
   rowTitles_[row] = tr(STR_APPMGR_BROWSER_INSTALL);
   rowSubtitles_[row] = tr(STR_APPMGR_BROWSER_INSTALL_SUB);
   rowItems_[row] = {};
   rowItems_[row].label = rowTitles_[row].c_str();
   rowItems_[row].subtitle = rowSubtitles_[row].c_str();
   rowItems_[row].actionValue = kActionBrowserHint;
+  ++row;
+
+  // The stored override, or the built-in default when none is set.
+  rowTitles_[row] = tr(STR_APPMGR_CATALOG_SERVER);
+  rowSubtitles_[row] = dynappreg::catalogUrl();
+  rowItems_[row] = {};
+  rowItems_[row].label = rowTitles_[row].c_str();
+  rowItems_[row].subtitle = rowSubtitles_[row].c_str();
+  rowItems_[row].actionValue = kActionCatalogServer;
   ++row;
 
   rowTitles_[row] = tr(STR_APPMGR_BUILTIN_VISIBILITY);
@@ -200,6 +219,12 @@ void AppManagerActivity::activateIndex(const int index) {
     case kActionBrowserHint:
       hintVisible_ = true;
       requestUpdate();
+      return;
+    case kActionInstallFromDisk:
+      pickFromDisk();
+      return;
+    case kActionCatalogServer:
+      editCatalogServer();
       return;
     case kActionBuiltinVisibility:
       startActivityForResultWith<AppVisibilitySettingsActivity>([this](const ActivityResult&) {
@@ -299,6 +324,46 @@ void AppManagerActivity::installEntry(const int catalogIndex) {
   showBlockingStatus(ok ? tr(STR_APPMGR_INSTALL_OK) : tr(STR_APPMGR_INSTALL_FAILED), entry.name);
   delay(900);  // let the verdict register before the list repaints
   requestUpdate();
+}
+
+void AppManagerActivity::pickFromDisk() {
+  // Reuse the File Manager as a picker rather than growing a second browser.
+  startActivityForResultWith<FileManagerActivity>(
+      [this](const ActivityResult& result) {
+        if (result.isCancelled || !std::holds_alternative<FilePathResult>(result.data)) return;
+        const std::string& path = std::get<FilePathResult>(result.data).path;
+        showBlockingStatus(tr(STR_APPMGR_INSTALLING), path.c_str());
+        std::string err;
+        const bool ok = dynappreg::installFromFile(path, err);
+        if (!ok) LOG_ERR("AppMgr", "install %s failed: %s", path.c_str(), err.c_str());
+        rebuildInstalledRows();
+        showBlockingStatus(ok ? tr(STR_APPMGR_INSTALL_OK) : tr(STR_APPMGR_INSTALL_FAILED), path.c_str());
+        delay(900);
+        requestUpdate();
+      },
+      FileManagerActivity::Mode::PickEapp, std::string("/"));
+}
+
+void AppManagerActivity::editCatalogServer() {
+  const std::string current = dynappreg::catalogUrl();
+  startActivityForResultWith<KeyboardEntryActivity>(
+      [this](const ActivityResult& result) {
+        if (result.isCancelled || !std::holds_alternative<KeyboardResult>(result.data)) return;
+        std::string url = std::get<KeyboardResult>(result.data).text;
+        // Trim, then treat an emptied field as "restore the default".
+        while (!url.empty() && (url.back() == ' ' || url.back() == '\r' || url.back() == '\n')) url.pop_back();
+        const bool cleared = url.empty();
+        if (!dynappreg::setCatalogUrl(url)) {
+          showBlockingStatus(tr(STR_APPMGR_URL_INVALID), nullptr);
+          delay(900);
+        } else {
+          showBlockingStatus(cleared ? tr(STR_APPMGR_URL_RESET) : tr(STR_APPMGR_URL_SAVED), nullptr);
+          delay(700);
+        }
+        rebuildInstalledRows();
+        requestUpdate();
+      },
+      tr(STR_APPMGR_CATALOG_SERVER), current, size_t{180}, InputType::Url);
 }
 
 void AppManagerActivity::onBackButton() {

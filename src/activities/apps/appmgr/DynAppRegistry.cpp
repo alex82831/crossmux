@@ -9,6 +9,7 @@
 
 #include "activities/apps/netkit/NetKit.h"
 #include "network/HttpDownloader.h"
+#include "util/FileOps.h"
 
 namespace {
 
@@ -111,6 +112,59 @@ const char* installedVersion(const InstalledApp* apps, const int count, const ch
     if (strcmp(apps[i].slug, slug) == 0) return apps[i].version;
   }
   return nullptr;
+}
+
+bool installFromFile(const std::string& srcPath, std::string& err) {
+  const std::string leaf = FileOps::baseName(srcPath);
+  if (leaf.size() < 6 || leaf.compare(leaf.size() - 5, 5, ".eapp") != 0) {
+    err = "not an .eapp";
+    return false;
+  }
+  const std::string slug = leaf.substr(0, leaf.size() - 5);
+  if (!validSlug(slug.c_str())) {
+    err = "bad name";
+    return false;
+  }
+  Storage.ensureDirectoryExists(kAppsDir);
+  const std::string finalPath = eappPath(slug.c_str());
+  if (finalPath == srcPath) return true;  // already installed in place
+
+  // Stage beside the target so a failed copy never clobbers a working install.
+  const std::string tmpPath = finalPath + ".tmp";
+  if (Storage.exists(tmpPath.c_str())) Storage.remove(tmpPath.c_str());
+  FileOps::CopyBuffer buf;
+  if (!buf.valid() || !FileOps::copyFile(srcPath, tmpPath, buf)) {
+    err = "copy failed";
+    if (Storage.exists(tmpPath.c_str())) Storage.remove(tmpPath.c_str());
+    return false;
+  }
+  if (Storage.exists(finalPath.c_str())) Storage.remove(finalPath.c_str());
+  if (!Storage.rename(tmpPath.c_str(), finalPath.c_str())) {
+    err = "rename failed";
+    Storage.remove(tmpPath.c_str());
+    return false;
+  }
+  // A hand-installed image carries no version, so drop any stale tag rather
+  // than let the catalog claim it is up to date.
+  char verPath[80];
+  snprintf(verPath, sizeof(verPath), "%s/%s.ver", kAppsDir, slug.c_str());
+  if (Storage.exists(verPath)) Storage.remove(verPath);
+  LOG_INF("APPREG", "installed %s from %s", slug.c_str(), srcPath.c_str());
+  return true;
+}
+
+std::string defaultCatalogUrl() { return std::string(kDefaultCatalogUrl); }
+
+bool setCatalogUrl(const std::string& url) {
+  Storage.ensureDirectoryExists(kAppsDir);
+  if (url.empty()) {  // clearing the override restores the built-in default
+    if (Storage.exists(kCatalogUrlPath)) return Storage.remove(kCatalogUrlPath);
+    return true;
+  }
+  if (url.compare(0, 4, "http") != 0) return false;
+  HalFile f;
+  if (!Storage.openFileForWrite("APPREG", kCatalogUrlPath, f)) return false;
+  return f.write(url.data(), url.size()) == url.size();
 }
 
 std::string catalogUrl() {

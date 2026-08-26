@@ -119,8 +119,13 @@ ever appended; `CpApi.size` lets apps probe.
 The App Manager scans `/apps`, and installs/updates from a JSON catalog
 (default: this repo's `store/catalog.json` on raw.githubusercontent.com;
 downloads are staged to `.tmp` and renamed, so a failed download never
-breaks an existing install). "从浏览器安装" reuses the existing web file
-manager — no new transport. Firmware reflash does not touch `/apps`, which
+breaks an existing install). The catalog server is editable on-device
+(「目录服务器」 → URL keyboard, stored in `/apps/catalog.url`; clearing the
+field restores the default). Three install routes reach the same place:
+the online catalog, 「从本地安装」 (picks a `.eapp` from the card through the
+File Manager), and 「从浏览器安装」, which reuses the existing web file
+manager — no new transport. Opening a `.eapp` in the File Manager installs
+it too. Firmware reflash does not touch `/apps`, which
 is the point: apps and their data live outside the firmware image.
 
 Bluetooth transport was considered and rejected: the BLE stack costs 50 KB+
