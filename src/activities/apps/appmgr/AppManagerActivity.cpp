@@ -395,6 +395,11 @@ void AppManagerActivity::onBackButton() {
   activityManager.goToApps();
 }
 
+void AppManagerActivity::render(RenderLock&& lock) {
+  if (optionPopup_.processRender(renderer, mappedInput)) return;
+  UiListActivity::render(std::move(lock));
+}
+
 bool AppManagerActivity::handleCustomInput() {
   if (hintVisible_) {
     int tapX = 0, tapY = 0;
@@ -409,7 +414,7 @@ bool AppManagerActivity::handleCustomInput() {
   // Confirm runs the app, so uninstall / clear-data live behind Left as well
   // as the touch long-press — a button-only user must still reach them. Only
   // consumed on a row that actually has something to manage.
-  if (mappedInput.wasReleased(MappedInputManager::Button::Left)) {
+  if (mappedInput.wasReleased(MappedInputManager::Button::ScreenLeft)) {
     const int installed = selectedInstalledIndex();
     if (installed >= 0) {
       showAppActions(installed);
@@ -421,8 +426,10 @@ bool AppManagerActivity::handleCustomInput() {
 
 void AppManagerActivity::drawFooter() {
   const bool manageable = mode_ == Mode::Installed && selectedInstalledIndex() >= 0;
-  const auto labels = mappedInput.mapLabels(tr(STR_BACK), manageable ? tr(STR_APPMGR_RUN) : tr(STR_SELECT),
-                                            manageable ? tr(STR_APPMGR_MANAGE) : "", "");
+  // Same reason as FileManager: the label and the handler must go through the
+  // same orientation transform, which mapLabels' previous/next slots do not.
+  const auto labels = mappedInput.mapDirectionalLabels(tr(STR_BACK), manageable ? tr(STR_APPMGR_RUN) : tr(STR_SELECT),
+                                                       manageable ? tr(STR_APPMGR_MANAGE) : "", "", "", "");
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
 
   if (hintVisible_) {

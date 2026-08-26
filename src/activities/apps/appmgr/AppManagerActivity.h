@@ -27,6 +27,11 @@ class AppManagerActivity final : public UiListActivity {
   static constexpr int kActionInstallFromDisk = 1003;
   static constexpr int kActionCatalogServer = 1004;
 
+  // The option popup is an overlay that owns the whole frame while it is up.
+  // Without this override it goes active and swallows input while never being
+  // drawn — the button appears dead and every press after it is eaten.
+  void render(RenderLock&&) override;
+
   int listCount() const override { return rowCount_; }
   void buildScreen(UiScreen& screen) override;
   void activateIndex(int index) override;

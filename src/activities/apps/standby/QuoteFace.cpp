@@ -135,8 +135,7 @@ uint32_t QuoteFace::secondsUntilNextWake() const {
 
 void QuoteFace::render(GfxRenderer& renderer, const Rect& viewport) {
   const int pad = 32;
-  const Rect box{viewport.x + pad, viewport.y + viewport.height / 5, viewport.width - 2 * pad,
-                 viewport.height * 3 / 5};
+  const Rect box{viewport.x + pad, viewport.y + viewport.height / 5, viewport.width - 2 * pad, viewport.height * 3 / 5};
 
   if (lineCount_ == 0) {
     UITheme::drawCenteredWrappedText(renderer, box, UI_12_FONT_ID, tr(STR_STANDBY_LINES_EMPTY), 4);
@@ -150,7 +149,6 @@ void QuoteFace::render(GfxRenderer& renderer, const Rect& viewport) {
   UITheme::drawCenteredWrappedText(renderer, box, NOTOSANS_16_FONT_ID, line_, 6);
 
   char counter[32];
-  snprintf(counter, sizeof(counter), "%u / %u", static_cast<unsigned>(index_ + 1),
-           static_cast<unsigned>(lineCount_));
+  snprintf(counter, sizeof(counter), "%u / %u", static_cast<unsigned>(index_ + 1), static_cast<unsigned>(lineCount_));
   renderer.drawCenteredText(SMALL_FONT_ID, viewport.y + viewport.height - 46, counter);
 }

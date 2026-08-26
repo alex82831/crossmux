@@ -49,6 +49,11 @@ class FileManagerActivity final : public UiListActivity {
   // Directory-menu actions, in popup order.
   enum class DirAction : uint8_t { NewFolder, Paste, ToggleHidden, StorageInfo };
 
+  // The option popup is an overlay that owns the whole frame while it is up.
+  // Without this override it goes active and swallows input while never being
+  // drawn — the button appears dead and every press after it is eaten.
+  void render(RenderLock&&) override;
+
   int listCount() const override { return static_cast<int>(rowItems_.size()); }
   void buildScreen(UiScreen& screen) override;
   void activateIndex(int index) override;

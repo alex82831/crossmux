@@ -85,9 +85,8 @@ void ReadingFace::render(GfxRenderer& renderer, const Rect& viewport) {
   const int unitW = renderer.getTextWidth(UI_12_FONT_ID, unit);
   const int heroW = valueW + 6 + unitW;
   renderer.drawText(NOTOSANS_18_FONT_ID, cx - heroW / 2, y, value);
-  renderer.drawText(UI_12_FONT_ID, cx - heroW / 2 + valueW + 6, y + renderer.getLineHeight(NOTOSANS_18_FONT_ID) -
-                                                                    renderer.getLineHeight(UI_12_FONT_ID) - 2,
-                    unit);
+  renderer.drawText(UI_12_FONT_ID, cx - heroW / 2 + valueW + 6,
+                    y + renderer.getLineHeight(NOTOSANS_18_FONT_ID) - renderer.getLineHeight(UI_12_FONT_ID) - 2, unit);
   y += renderer.getLineHeight(NOTOSANS_18_FONT_ID) + 4;
 
   renderer.drawCenteredText(SMALL_FONT_ID, y, tr(STR_STANDBY_TODAY_READ));

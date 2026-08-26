@@ -203,7 +203,13 @@ void FileManagerActivity::buildScreen(UiScreen& screen) {
 
 void FileManagerActivity::drawFooter() {
   const bool pick = mode_ == Mode::PickEapp;
-  const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_SELECT), pick ? "" : tr(STR_FILEMGR_DIR_MENU), "");
+  // mapDirectionalLabels + Button::Screen* rather than mapLabels + Button::Left:
+  // mapLabels' third argument is the *previous* nav label and gets swapped with
+  // "next" when the control axis follows a rotated screen, which would move
+  // this label to a different button than the handler listens on. Both of these
+  // route through mapScreenDirection, so they cannot disagree.
+  const auto labels =
+      mappedInput.mapDirectionalLabels(tr(STR_BACK), tr(STR_SELECT), pick ? "" : tr(STR_FILEMGR_DIR_MENU), "", "", "");
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
 
   if (!notice_.empty()) {
@@ -239,11 +245,18 @@ void FileManagerActivity::showBlocking(const char* message, const char* detail) 
 
 void FileManagerActivity::onBackButton() { goUp(); }
 
+void FileManagerActivity::render(RenderLock&& lock) {
+  // processRender draws the popup's own hints, the popup, and commits the
+  // frame; when it owns the screen the list underneath must not be drawn.
+  if (popup_.processRender(renderer, mappedInput)) return;
+  UiListActivity::render(std::move(lock));
+}
+
 bool FileManagerActivity::handleCustomInput() {
   if (popup_.handleInput(mappedInput, [this] { requestUpdate(); })) return true;
 
   // Left opens the directory menu; the picker keeps its input surface minimal.
-  if (mode_ == Mode::Manage && mappedInput.wasReleased(MappedInputManager::Button::Left)) {
+  if (mode_ == Mode::Manage && mappedInput.wasReleased(MappedInputManager::Button::ScreenLeft)) {
     showDirMenu();
     return true;
   }
