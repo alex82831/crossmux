@@ -19,8 +19,13 @@
 // directory so a stock build has a working install source.
 namespace dynappreg {
 
-constexpr int kMaxApps = 24;
-constexpr int kMaxCatalog = 24;
+// These caps silently drop apps once exceeded, and the store already ships 26,
+// so both sit well clear of it. Cost per slot: InstalledApp 56 B,
+// InstalledAppName 80 B, CatalogEntry ~324 B — the catalog is the expensive
+// one, and only the App Manager holds a full array of it while it is open.
+// A scan that hits either cap logs, so this can never fail silently again.
+constexpr int kMaxApps = 48;
+constexpr int kMaxCatalog = 40;
 
 struct InstalledApp {
   char slug[32];

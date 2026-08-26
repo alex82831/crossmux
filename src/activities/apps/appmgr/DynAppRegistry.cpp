@@ -84,6 +84,7 @@ int scanInstalled(InstalledApp* out, const int cap) {
     app.dataBytes = dirBytes(dataPath);
     ++count;
   }
+  if (count == cap) LOG_ERR("DYNAPP", "installed-app scan hit the cap of %d; some apps are not listed", cap);
   return count;
 }
 
@@ -106,6 +107,10 @@ int scanInstalledNames(InstalledAppName* out, const int cap) {
     copyStr(app.name, sizeof(app.name), app.slug);  // replaced below when the catalog knows better
     ++count;
   }
+  // Worth shouting about: the sort below runs after this loop, so hitting the
+  // cap drops whichever apps the directory happened to yield last rather than
+  // a predictable tail.
+  if (count == cap) LOG_ERR("DYNAPP", "installed-app scan hit the cap of %d; some apps are not listed", cap);
   if (count == 0) return 0;
 
   // Slug order groups a family together (aibook/aichat/aidict/...) and, unlike
@@ -239,7 +244,10 @@ int parseCatalog(const std::string& body, CatalogEntry* out, const int cap) {
   if (deserializeJson(doc, body) != DeserializationError::Ok) return -1;
   int count = 0;
   for (JsonObjectConst item : doc["apps"].as<JsonArrayConst>()) {
-    if (count >= cap) break;
+    if (count >= cap) {
+      LOG_ERR("DYNAPP", "catalog has more than %d entries; the rest are not shown", cap);
+      break;
+    }
     CatalogEntry& e = out[count];
     memset(&e, 0, sizeof(e));
     copyStr(e.slug, sizeof(e.slug), item["slug"] | "");

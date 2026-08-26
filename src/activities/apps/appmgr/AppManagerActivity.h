@@ -57,8 +57,10 @@ class AppManagerActivity final : public UiListActivity {
   std::string catalogError_;
 
   // Row window shared by both modes; strings owned here because ListItem
-  // keeps only pointers. Sized: sections + apps + catalog entries.
-  static constexpr int kMaxRows = dynappreg::kMaxApps + dynappreg::kMaxCatalog + 8;
+  // keeps only pointers. The two modes rebuild it from scratch and never
+  // coexist, so this is the larger of the two, not their sum.
+  static constexpr int kMaxRows =
+      (dynappreg::kMaxApps > dynappreg::kMaxCatalog ? dynappreg::kMaxApps : dynappreg::kMaxCatalog) + 8;
   freeink::ui::ListItem rowItems_[kMaxRows]{};
   std::string rowTitles_[kMaxRows];
   std::string rowSubtitles_[kMaxRows];
