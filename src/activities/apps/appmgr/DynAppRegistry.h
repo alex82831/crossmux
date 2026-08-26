@@ -38,8 +38,20 @@ struct CatalogEntry {
   uint32_t bytes;
 };
 
+// Just enough to list and launch an installed app.
+struct InstalledAppName {
+  char slug[32];
+  char name[48];  // from the catalog cache, or the slug when unknown
+};
+
 // ---- Installed apps ----------------------------------------------------
 int scanInstalled(InstalledApp* out, int cap);
+
+// Installed apps with display names resolved, sorted by slug. Skips the
+// version tag and the per-app data-size walk that scanInstalled() does, so a
+// menu that only lists and launches costs one directory read plus one catalog
+// parse instead of one directory walk per installed app.
+int scanInstalledNames(InstalledAppName* out, int cap);
 std::string eappPath(const char* slug);
 bool uninstall(const char* slug);  // removes image, version tag and data
 bool clearData(const char* slug);  // removes only /apps/data/<slug>/

@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cstring>
 #include <string>
 
 #include "../../components/UITheme.h"
@@ -118,6 +119,44 @@ constexpr bool appIdsAreUnique() {
   return true;
 }
 
+// Installed apps carry no icon of their own — the .eapp format has no room for
+// one and decoding a bitmap per row would cost SD reads on every repaint. The
+// apps that used to be built in still have their icons compiled into the
+// firmware, so map those back by slug and give everything else the generic
+// one. Purely cosmetic: an unknown slug still lists and launches.
+UIIcon installedIcon(const char* slug) {
+  struct SlugIcon {
+    const char* slug;
+    UIIcon icon;
+  };
+  static constexpr SlugIcon kIcons[] = {
+      {"sudoku", UIIcon::Sudoku},
+      {"sokoban", UIIcon::Sokoban},
+      {"gomoku", UIIcon::Gomoku},
+      {"minesweeper", UIIcon::Minesweeper},
+      {"avatar", UIIcon::Avatar},
+      {"g2048", UIIcon::Game2048},
+      {"buddy", UIIcon::Buddy},
+      {"calculator", UIIcon::Calculator},
+      {"woodfish", UIIcon::Woodfish},
+#ifdef ENABLE_CHINESE_VERSION
+      {"xiangqi", UIIcon::ChineseChess},
+      {"weather", UIIcon::Weather},
+      {"poem", UIIcon::Poem},
+      {"rss", UIIcon::Rss},
+      {"sanguo", UIIcon::Sanguo},
+      {"klotski", UIIcon::Klotski},
+      {"pomodoro", UIIcon::Pomodoro},
+      {"exchange", UIIcon::Exchange},
+      {"vocab", UIIcon::Vocab},
+#endif
+  };
+  for (const auto& entry : kIcons) {
+    if (strcmp(entry.slug, slug) == 0) return entry.icon;
+  }
+  return UIIcon::Apps;
+}
+
 constexpr bool usesSideScrollBar(const CrossPointSettings::UI_THEME theme) {
   switch (theme) {
     case CrossPointSettings::LYRA:
@@ -188,21 +227,59 @@ bool AppsMenuActivity::setAppVisible(const int appIndex, const bool visible) {
   return true;
 }
 
-int AppsMenuActivity::getVisibleAppCount() {
+int AppsMenuActivity::visibleBuiltinCount() {
   return visibleAppCount(effectiveHiddenMask(SETTINGS.hiddenAppsMask, OPDS_STORE.hasServers()));
 }
 
-void AppsMenuActivity::selectMainTabContentEdge(const MainTabContentEdge edge) {
-  selected = MainTabs::contentEdgeIndex(edge, getVisibleAppCount());
+int AppsMenuActivity::builtinIndexForVisible(const int visibleIndex) {
+  return appIndexForVisibleIndex(effectiveHiddenMask(SETTINGS.hiddenAppsMask, OPDS_STORE.hasServers()), visibleIndex);
 }
 
-int AppsMenuActivity::getAppIndexForVisibleIndex(const int visibleIndex) {
-  return appIndexForVisibleIndex(effectiveHiddenMask(SETTINGS.hiddenAppsMask, OPDS_STORE.hasServers()), visibleIndex);
+int AppsMenuActivity::installedFirstIndex() const { return visibleBuiltinCount(); }
+
+int AppsMenuActivity::entryCount() const { return visibleBuiltinCount() + installedCount_; }
+
+std::string AppsMenuActivity::entryTitle(const int index) const {
+  const int first = installedFirstIndex();
+  if (index < first) {
+    const int appIndex = builtinIndexForVisible(index);
+    return appIndex >= 0 ? std::string(I18N.get(kAppEntries[appIndex].titleId)) : std::string();
+  }
+#ifndef SIMULATOR
+  const int slot = index - first;
+  if (slot >= 0 && slot < installedCount_) return std::string(installed_[slot].name);
+#endif
+  return std::string();
+}
+
+UIIcon AppsMenuActivity::entryIcon(const int index) const {
+  const int first = installedFirstIndex();
+  if (index < first) {
+    const int appIndex = builtinIndexForVisible(index);
+    return appIndex >= 0 ? kAppEntries[appIndex].icon : UIIcon::None;
+  }
+#ifndef SIMULATOR
+  const int slot = index - first;
+  if (slot >= 0 && slot < installedCount_) return installedIcon(installed_[slot].slug);
+#endif
+  return UIIcon::None;
+}
+
+void AppsMenuActivity::scanInstalled() {
+  installedCount_ = 0;
+#ifndef SIMULATOR
+  installedCount_ = dynappreg::scanInstalledNames(installed_, dynappreg::kMaxApps);
+#endif
+}
+
+void AppsMenuActivity::selectMainTabContentEdge(const MainTabContentEdge edge) {
+  selected = MainTabs::contentEdgeIndex(edge, entryCount());
 }
 
 void AppsMenuActivity::onEnter() {
   Activity::onEnter();
   selected = 0;
+  scanInstalled();
   requestUpdate();
 }
 
@@ -218,17 +295,27 @@ int AppsMenuActivity::iconIndexFromPoint(const int x, const int y) const {
   const int top = metrics.topPadding + metrics.headerHeight + metrics.verticalSpacing;
   const int height = renderer.getScreenHeight() - top - metrics.buttonHintsHeight - metrics.verticalSpacing;
   return InxGridGeometry::indexFromPoint(x, y - top, renderer.getScreenWidth(), height,
-                                         InxGridGeometry::pageStart(selected, getVisibleAppCount()),
-                                         getVisibleAppCount());
+                                         InxGridGeometry::pageStart(selected, entryCount()), entryCount());
 }
 
 void AppsMenuActivity::openSelected() {
-  const int appIndex = getAppIndexForVisibleIndex(selected);
-  if (appIndex >= 0) (activityManager.*kAppEntries[appIndex].open)();
+  const int first = installedFirstIndex();
+  if (selected < first) {
+    const int appIndex = builtinIndexForVisible(selected);
+    if (appIndex >= 0) (activityManager.*kAppEntries[appIndex].open)();
+    return;
+  }
+#ifndef SIMULATOR
+  const int slot = selected - first;
+  if (slot >= 0 && slot < installedCount_) {
+    const char* slug = installed_[slot].slug;
+    activityManager.startDynApp(dynappreg::eappPath(slug), slug);
+  }
+#endif
 }
 
 void AppsMenuActivity::loop() {
-  const int visibleCount = getVisibleAppCount();
+  const int visibleCount = entryCount();
   if (usesIconLayout()) {
     int x = 0;
     int y = 0;
@@ -287,8 +374,8 @@ void AppsMenuActivity::drawIconGrid(const Rect& rect, const int visibleCount, co
 
   for (int slot = 0; slot < InxGridGeometry::itemsPerPage && start + slot < visibleCount; ++slot) {
     const int visibleIndex = start + slot;
-    const int appIndex = getAppIndexForVisibleIndex(visibleIndex);
-    if (appIndex < 0) continue;
+    const std::string title = entryTitle(visibleIndex);
+    if (title.empty()) continue;
     const int column = slot % InxGridGeometry::columns;
     const int row = slot / InxGridGeometry::columns;
     const Rect cell{rect.x + column * cellWidth + 4, rect.y + row * cellHeight + 4, cellWidth - 8, cellHeight - 8};
@@ -297,9 +384,8 @@ void AppsMenuActivity::drawIconGrid(const Rect& rect, const int visibleCount, co
 
     const int iconX = cell.x + (cell.width - iconSize) / 2;
     const int iconY = cell.y + std::max(5, (cell.height - iconSize - lineHeight - 8) / 2);
-    InxAppIcons::draw(renderer, kAppEntries[appIndex].icon, iconX, iconY, iconScale, isSelected);
-    const std::string label =
-        renderer.truncatedText(UI_10_FONT_ID, I18N.get(kAppEntries[appIndex].titleId), std::max(1, cell.width - 8));
+    InxAppIcons::draw(renderer, entryIcon(visibleIndex), iconX, iconY, iconScale, isSelected);
+    const std::string label = renderer.truncatedText(UI_10_FONT_ID, title.c_str(), std::max(1, cell.width - 8));
     const int labelX = cell.x + (cell.width - renderer.getTextWidth(UI_10_FONT_ID, label.c_str())) / 2;
     renderer.drawText(UI_10_FONT_ID, labelX, iconY + iconSize + 8, label.c_str(), !isSelected);
   }
@@ -317,7 +403,7 @@ void AppsMenuActivity::render(RenderLock&&) {
 
   const int listY = metrics.topPadding + metrics.headerHeight + metrics.verticalSpacing;
   const int listH = sh - listY - metrics.buttonHintsHeight - metrics.verticalSpacing;
-  const int visibleCount = getVisibleAppCount();
+  const int visibleCount = entryCount();
   const auto theme = static_cast<CrossPointSettings::UI_THEME>(SETTINGS.uiTheme);
   const bool showSelection = showMainTabContentSelection();
 
@@ -339,15 +425,8 @@ void AppsMenuActivity::render(RenderLock&&) {
     // ponytail: scan at most 32 entries instead of keeping a RAM-backed filtered list.
     GUI.drawButtonMenu(
         renderer, Rect{0, listY, sw, listH}, pageCount, showSelection ? selected - pageStart : -1,
-        [pageStart](int i) {
-          const int appIndex = getAppIndexForVisibleIndex(i + pageStart);
-          return appIndex >= 0 ? std::string(I18N.get(kAppEntries[appIndex].titleId)) : std::string();
-        },
-        [pageStart](int i) {
-          const int appIndex = getAppIndexForVisibleIndex(i + pageStart);
-          return appIndex >= 0 ? kAppEntries[appIndex].icon : UIIcon::None;
-        },
-        spacing);
+        [this, pageStart](int i) { return entryTitle(i + pageStart); },
+        [this, pageStart](int i) { return entryIcon(i + pageStart); }, spacing);
 
     if (totalPages > 1) {
       if (usesSideScrollBar(theme)) {

@@ -3,6 +3,7 @@
 #include <ArduinoJson.h>
 #include <HalStorage.h>
 #include <Logging.h>
+#include <Memory.h>
 
 #include <cstdio>
 #include <cstring>
@@ -82,6 +83,54 @@ int scanInstalled(InstalledApp* out, const int cap) {
     snprintf(dataPath, sizeof(dataPath), "%s/%s", kDataDir, app.slug);
     app.dataBytes = dirBytes(dataPath);
     ++count;
+  }
+  return count;
+}
+
+int scanInstalledNames(InstalledAppName* out, const int cap) {
+  int count = 0;
+  auto dir = Storage.open(kAppsDir);
+  if (!dir || !dir.isDirectory()) return 0;
+  dir.rewindDirectory();
+  for (auto f = dir.openNextFile(); f && count < cap; f = dir.openNextFile()) {
+    if (f.isDirectory()) continue;
+    char name[48];
+    if (!f.getName(name, sizeof(name))) continue;
+    const size_t len = strlen(name);
+    if (len < 6 || strcmp(name + len - 5, ".eapp") != 0) continue;
+    InstalledAppName& app = out[count];
+    memset(&app, 0, sizeof(app));
+    const size_t stem = len - 5 < sizeof(app.slug) - 1 ? len - 5 : sizeof(app.slug) - 1;
+    memcpy(app.slug, name, stem);
+    app.slug[stem] = '\0';
+    copyStr(app.name, sizeof(app.name), app.slug);  // replaced below when the catalog knows better
+    ++count;
+  }
+  if (count == 0) return 0;
+
+  // Slug order groups a family together (aibook/aichat/aidict/...) and, unlike
+  // the FAT directory order, does not depend on install sequence.
+  for (int i = 1; i < count; ++i) {
+    InstalledAppName key = out[i];
+    int j = i - 1;
+    while (j >= 0 && strcmp(out[j].slug, key.slug) > 0) {
+      out[j + 1] = out[j];
+      --j;
+    }
+    out[j + 1] = key;
+  }
+
+  // One catalog parse for every name. The entry array is ~8KB, far too much
+  // for this task's stack, and it is only needed for the length of this call.
+  auto catalog = makeUniqueNoThrow<CatalogEntry[]>(kMaxCatalog);
+  if (!catalog) {
+    LOG_ERR("DYNAPP", "no heap for the catalog cache; app names fall back to slugs");
+    return count;
+  }
+  const int catalogCount = loadCatalogCache(catalog.get(), kMaxCatalog);
+  for (int i = 0; i < count; ++i) {
+    const char* name = catalogNameFor(catalog.get(), catalogCount, out[i].slug);
+    if (name != nullptr) copyStr(out[i].name, sizeof(out[i].name), name);
   }
   return count;
 }

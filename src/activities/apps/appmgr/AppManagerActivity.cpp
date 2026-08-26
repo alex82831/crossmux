@@ -233,9 +233,28 @@ void AppManagerActivity::activateIndex(const int index) {
       });
       return;
     default:
-      if (action >= 0 && action < installedCount_) showAppActions(action);
+      // Confirm runs the app. Opening a menu here made launching cost two
+      // presses, which is the wrong default: running is what a row is for, and
+      // uninstall/clear-data belong on the long press like everywhere else.
+      if (action >= 0 && action < installedCount_) runApp(installed_[action].slug);
       return;
   }
+}
+
+// The installed-app index behind a row, or -1 when the row is a header, a
+// disabled placeholder, or one of the kAction* commands.
+int AppManagerActivity::installedIndexForRow(const int index) const {
+  if (mode_ != Mode::Installed) return -1;
+  if (index < 0 || index >= rowCount_ || rowItems_[index].isHeader || !rowItems_[index].enabled) return -1;
+  const int action = rowItems_[index].actionValue;
+  return action >= 0 && action < installedCount_ ? action : -1;
+}
+
+int AppManagerActivity::selectedInstalledIndex() { return installedIndexForRow(activeNav().selected); }
+
+void AppManagerActivity::onRowLongPress(const int index) {
+  const int installed = installedIndexForRow(index);
+  if (installed >= 0) showAppActions(installed);
 }
 
 void AppManagerActivity::showAppActions(const int installedIndex) {
@@ -385,11 +404,25 @@ bool AppManagerActivity::handleCustomInput() {
     }
     return true;
   }
-  return optionPopup_.handleInput(mappedInput, [this] { requestUpdate(); });
+  if (optionPopup_.handleInput(mappedInput, [this] { requestUpdate(); })) return true;
+
+  // Confirm runs the app, so uninstall / clear-data live behind Left as well
+  // as the touch long-press — a button-only user must still reach them. Only
+  // consumed on a row that actually has something to manage.
+  if (mappedInput.wasReleased(MappedInputManager::Button::Left)) {
+    const int installed = selectedInstalledIndex();
+    if (installed >= 0) {
+      showAppActions(installed);
+      return true;
+    }
+  }
+  return false;
 }
 
 void AppManagerActivity::drawFooter() {
-  const auto labels = mappedInput.mapLabels(tr(STR_BACK), tr(STR_SELECT), "", "");
+  const bool manageable = mode_ == Mode::Installed && selectedInstalledIndex() >= 0;
+  const auto labels = mappedInput.mapLabels(tr(STR_BACK), manageable ? tr(STR_APPMGR_RUN) : tr(STR_SELECT),
+                                            manageable ? tr(STR_APPMGR_MANAGE) : "", "");
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
 
   if (hintVisible_) {

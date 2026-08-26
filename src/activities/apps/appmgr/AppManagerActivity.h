@@ -30,11 +30,14 @@ class AppManagerActivity final : public UiListActivity {
   int listCount() const override { return rowCount_; }
   void buildScreen(UiScreen& screen) override;
   void activateIndex(int index) override;
+  void onRowLongPress(int index) override;
   const char* headerTitle() const override;
   void onBackButton() override;
   bool handleCustomInput() override;
   void drawFooter() override;
 
+  int installedIndexForRow(int index) const;
+  int selectedInstalledIndex();
   void rebuildInstalledRows();
   void openCatalog();
   void rebuildCatalogRows();
