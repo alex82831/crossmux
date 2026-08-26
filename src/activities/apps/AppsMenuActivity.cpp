@@ -120,41 +120,35 @@ constexpr bool appIdsAreUnique() {
 }
 
 // Installed apps carry no icon of their own — the .eapp format has no room for
-// one and decoding a bitmap per row would cost SD reads on every repaint. The
-// apps that used to be built in still have their icons compiled into the
-// firmware, so map those back by slug and give everything else the generic
-// one. Purely cosmetic: an unknown slug still lists and launches.
+// one and decoding a bitmap per row would cost SD reads on every repaint. So
+// the firmware keeps the artwork and maps it by slug: the apps that used to be
+// built in still have their original icons, the rest were drawn for this
+// table, and anything unknown falls back to AppGeneric. Purely cosmetic — an
+// unmapped slug still lists and launches.
 UIIcon installedIcon(const char* slug) {
   struct SlugIcon {
     const char* slug;
     UIIcon icon;
   };
   static constexpr SlugIcon kIcons[] = {
-      {"sudoku", UIIcon::Sudoku},
-      {"sokoban", UIIcon::Sokoban},
-      {"gomoku", UIIcon::Gomoku},
-      {"minesweeper", UIIcon::Minesweeper},
-      {"avatar", UIIcon::Avatar},
-      {"g2048", UIIcon::Game2048},
-      {"buddy", UIIcon::Buddy},
-      {"calculator", UIIcon::Calculator},
-      {"woodfish", UIIcon::Woodfish},
-#ifdef ENABLE_CHINESE_VERSION
-      {"xiangqi", UIIcon::ChineseChess},
-      {"weather", UIIcon::Weather},
-      {"poem", UIIcon::Poem},
-      {"rss", UIIcon::Rss},
-      {"sanguo", UIIcon::Sanguo},
-      {"klotski", UIIcon::Klotski},
-      {"pomodoro", UIIcon::Pomodoro},
-      {"exchange", UIIcon::Exchange},
-      {"vocab", UIIcon::Vocab},
-#endif
+      {"sudoku", UIIcon::Sudoku},     {"sokoban", UIIcon::Sokoban},
+      {"gomoku", UIIcon::Gomoku},     {"minesweeper", UIIcon::Minesweeper},
+      {"avatar", UIIcon::Avatar},     {"g2048", UIIcon::Game2048},
+      {"buddy", UIIcon::Buddy},       {"calculator", UIIcon::Calculator},
+      {"woodfish", UIIcon::Woodfish}, {"music", UIIcon::Music},
+      {"sysmon", UIIcon::SysMon},     {"life", UIIcon::Life},
+      {"aichat", UIIcon::AiChat},     {"aidict", UIIcon::AiDict},
+      {"ailesson", UIIcon::AiLesson}, {"aibook", UIIcon::AiBook},
+      {"ainote", UIIcon::AiNote},     {"xiangqi", UIIcon::ChineseChess},
+      {"weather", UIIcon::Weather},   {"poem", UIIcon::Poem},
+      {"rss", UIIcon::Rss},           {"sanguo", UIIcon::Sanguo},
+      {"klotski", UIIcon::Klotski},   {"pomodoro", UIIcon::Pomodoro},
+      {"exchange", UIIcon::Exchange}, {"vocab", UIIcon::Vocab},
   };
   for (const auto& entry : kIcons) {
     if (strcmp(entry.slug, slug) == 0) return entry.icon;
   }
-  return UIIcon::Apps;
+  return UIIcon::AppGeneric;
 }
 
 constexpr bool usesSideScrollBar(const CrossPointSettings::UI_THEME theme) {

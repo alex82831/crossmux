@@ -20,6 +20,7 @@
 #include "components/icons/bookmark.h"
 #include "components/icons/buddy.h"
 #include "components/icons/calculator.h"
+#include "components/icons/inx_apps.h"
 #include "components/icons/sokoban.h"
 #ifdef ENABLE_CHINESE_VERSION
 #include "components/icons/chinese_chess.h"
@@ -167,7 +168,10 @@ const uint8_t* LyraTheme::iconForName(UIIcon icon, int size) {
         return VocabIcon;
 #endif
       default:
-        return nullptr;
+        // Same 32x32, zero-bits-are-ink format, so the app-grid artwork fills
+        // the gaps here rather than being duplicated into this icon set. This
+        // is how installed .eapp icons reach the Lyra themes.
+        return InxAppIcons::get(icon);
     }
   }
   return nullptr;

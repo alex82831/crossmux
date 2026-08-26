@@ -150,8 +150,8 @@ enum UIIcon {
   Sudoku,
   Sokoban,
   Gomoku,
-#ifdef ENABLE_CHINESE_VERSION
   ChineseChess,
+#ifdef ENABLE_CHINESE_VERSION
   WeRead,
 #endif
   Minesweeper,
@@ -169,7 +169,17 @@ enum UIIcon {
   Calculator,
   Woodfish,
   AppStore,
-#ifdef ENABLE_CHINESE_VERSION
+  // Installable apps that were never built in, plus the fallback every
+  // unmapped .eapp uses. Not persisted anywhere, so the order is free to move.
+  AppGeneric,
+  AiChat,
+  AiDict,
+  AiLesson,
+  AiBook,
+  AiNote,
+  Music,
+  SysMon,
+  Life,
   Weather,
   Poem,
   Rss,
@@ -178,7 +188,6 @@ enum UIIcon {
   Pomodoro,
   Exchange,
   Vocab,
-#endif
 };
 
 // Default theme implementation (Classic Theme)
