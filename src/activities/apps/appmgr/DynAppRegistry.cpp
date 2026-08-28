@@ -55,6 +55,7 @@ namespace dynappreg {
 
 int scanInstalled(InstalledApp* out, const int cap) {
   int count = 0;
+  int skipped = 0;
   auto dir = Storage.open(kAppsDir);
   if (!dir || !dir.isDirectory()) return 0;
   dir.rewindDirectory();
@@ -69,6 +70,13 @@ int scanInstalled(InstalledApp* out, const int cap) {
     const size_t stem = len - 5 < sizeof(app.slug) - 1 ? len - 5 : sizeof(app.slug) - 1;
     memcpy(app.slug, name, stem);
     app.slug[stem] = '\0';
+    // The same gate install/uninstall already apply. Without it the directory
+    // listing is taken at face value, and a card written on macOS is full of
+    // "._<name>.eapp" AppleDouble sidecars that list as broken apps.
+    if (!validSlug(app.slug)) {
+      ++skipped;
+      continue;
+    }
     app.eappBytes = f.size();
     // Version tag, if the installer wrote one.
     char verPath[64];
@@ -84,12 +92,14 @@ int scanInstalled(InstalledApp* out, const int cap) {
     app.dataBytes = dirBytes(dataPath);
     ++count;
   }
+  if (skipped > 0) LOG_INF("DYNAPP", "ignored %d file(s) in /apps that are not valid app names", skipped);
   if (count == cap) LOG_ERR("DYNAPP", "installed-app scan hit the cap of %d; some apps are not listed", cap);
   return count;
 }
 
 int scanInstalledNames(InstalledAppName* out, const int cap) {
   int count = 0;
+  int skipped = 0;
   auto dir = Storage.open(kAppsDir);
   if (!dir || !dir.isDirectory()) return 0;
   dir.rewindDirectory();
@@ -104,9 +114,14 @@ int scanInstalledNames(InstalledAppName* out, const int cap) {
     const size_t stem = len - 5 < sizeof(app.slug) - 1 ? len - 5 : sizeof(app.slug) - 1;
     memcpy(app.slug, name, stem);
     app.slug[stem] = '\0';
+    if (!validSlug(app.slug)) {  // see scanInstalled: macOS "._" sidecars, dotfiles
+      ++skipped;
+      continue;
+    }
     copyStr(app.name, sizeof(app.name), app.slug);  // replaced below when the catalog knows better
     ++count;
   }
+  if (skipped > 0) LOG_INF("DYNAPP", "ignored %d file(s) in /apps that are not valid app names", skipped);
   // Worth shouting about: the sort below runs after this loop, so hitting the
   // cap drops whichever apps the directory happened to yield last rather than
   // a predictable tail.
